@@ -75,7 +75,13 @@ export function renderDashboardAnalytics(container) {
       <div style="display: flex; gap: var(--space-4); margin-bottom: var(--space-4); align-items: center;">
         <div style="text-align: center;">
           <div style="font-size: 32px; font-weight: bold; color: var(--text-primary); line-height: 1;">${REVIEWS_SUMMARY.rating}</div>
-          <div style="color: var(--gold-400); font-size: 14px; margin: 4px 0;">★★★★★</div>
+          <div style="color: var(--gold-400); margin: 4px 0; display: flex; gap: 2px;">
+            <i data-lucide="star" style="width: 14px; height: 14px; fill: currentColor;"></i>
+            <i data-lucide="star" style="width: 14px; height: 14px; fill: currentColor;"></i>
+            <i data-lucide="star" style="width: 14px; height: 14px; fill: currentColor;"></i>
+            <i data-lucide="star" style="width: 14px; height: 14px; fill: currentColor;"></i>
+            <i data-lucide="star" style="width: 14px; height: 14px; fill: currentColor;"></i>
+          </div>
           <div style="font-size: 10px; color: var(--text-tertiary);">${REVIEWS_SUMMARY.total} Reviews</div>
         </div>
         <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">

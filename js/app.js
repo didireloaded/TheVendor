@@ -10,6 +10,10 @@ import { renderFavoritesScreen } from './screens/favorites.js';
 import { renderProfileScreen } from './screens/profile.js';
 import { renderSearchScreen, destroySearch } from './screens/search.js';
 import { renderVendorProfile, closeVendorProfile } from './screens/vendor-profile.js';
+import { renderAdminScreen } from './screens/admin.js';
+import { renderNotificationsScreen } from './screens/notifications.js';
+import { renderAuthScreen } from './screens/auth.js';
+import { renderVendorRegistration } from './screens/vendor-registration.js';
 
 // ---------- State ----------
 const state = {
@@ -18,6 +22,7 @@ const state = {
   favorites: new Set(),
   searchQuery: '',
   showSearch: false,
+  isAuthenticated: !!localStorage.getItem('tv_authenticated'),
 };
 
 // ---------- Boot Sequence ----------
@@ -31,7 +36,16 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('app').addEventListener('openVendorProfile', (e) => {
     openVendorProfileById(e.detail.id);
   });
+  document.getElementById('app').addEventListener('navigate', (e) => {
+    navigateTo(e.detail);
+  });
+  window.addEventListener('authComplete', () => {
+    state.isAuthenticated = true;
+    initApp();
+  });
 });
+
+let splashTimeout1, splashTimeout2;
 
 function initSplash() {
   const splash = document.getElementById('splash-screen');
@@ -41,22 +55,32 @@ function initSplash() {
   // Check if user has seen onboarding
   const hasOnboarded = localStorage.getItem('tv_onboarded');
 
-  setTimeout(() => {
+  splashTimeout1 = setTimeout(() => {
     splash.style.opacity = '0';
     splash.style.transition = 'opacity 0.5s ease';
 
-    setTimeout(() => {
+    splashTimeout2 = setTimeout(() => {
       splash.classList.add('hidden');
 
       if (!hasOnboarded) {
         onboarding.classList.remove('hidden');
         initOnboarding();
+      } else if (!state.isAuthenticated) {
+        const authScreen = document.getElementById('auth-screen');
+        authScreen.classList.remove('hidden');
+        renderAuthScreen(authScreen);
       } else {
         app.classList.remove('hidden');
         initApp();
       }
     }, 500);
   }, 2200);
+}
+
+// Added cleanup function to avoid memory leaks if navigation occurs before splash completes
+export function cleanupSplash() {
+  if (splashTimeout1) clearTimeout(splashTimeout1);
+  if (splashTimeout2) clearTimeout(splashTimeout2);
 }
 
 // ---------- Onboarding ----------
@@ -102,8 +126,14 @@ function initOnboarding() {
     onboarding.style.transition = 'opacity 0.4s ease';
     setTimeout(() => {
       onboarding.classList.add('hidden');
-      app.classList.remove('hidden');
-      initApp();
+      if (!state.isAuthenticated) {
+        const authScreen = document.getElementById('auth-screen');
+        authScreen.classList.remove('hidden');
+        renderAuthScreen(authScreen);
+      } else {
+        app.classList.remove('hidden');
+        initApp();
+      }
     }, 400);
   }
 }
@@ -181,6 +211,15 @@ export function navigateTo(screen) {
       break;
     case 'search':
       renderSearchScreen(container);
+      break;
+    case 'admin':
+      renderAdminScreen(container);
+      break;
+    case 'notifications':
+      renderNotificationsScreen(container);
+      break;
+    case 'vendor-registration':
+      renderVendorRegistration(container);
       break;
     default:
       renderHomeScreen(container);
@@ -284,6 +323,14 @@ export const icons = {
   logOut: '<i data-lucide="log-out" style="width: 24px; height: 24px;"></i>',
   briefcase: '<i data-lucide="briefcase" style="width: 24px; height: 24px;"></i>',
   trending: '<i data-lucide="trending-up" style="width: 24px; height: 24px;"></i>',
+  checkCircle: '<i data-lucide="check-circle" style="width: 24px; height: 24px;"></i>',
+  mapPin: '<i data-lucide="map-pin" style="width: 24px; height: 24px;"></i>',
+  bookmark: '<i data-lucide="bookmark" style="width: 24px; height: 24px;"></i>',
+  messageSquare: '<i data-lucide="message-square" style="width: 24px; height: 24px;"></i>',
+  eye: '<i data-lucide="eye" style="width: 24px; height: 24px;"></i>',
+  shield: '<i data-lucide="shield" style="width: 24px; height: 24px;"></i>',
+  fileText: '<i data-lucide="file-text" style="width: 24px; height: 24px;"></i>',
+  user: '<i data-lucide="user" style="width: 24px; height: 24px;"></i>',
 };
 
 // Export Lucide wrapper

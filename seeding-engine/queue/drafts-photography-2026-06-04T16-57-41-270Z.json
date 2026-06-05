@@ -1,0 +1,30 @@
+[
+  {
+    "id": "photography-pro-services-1",
+    "name": "Photography Pro Services 1",
+    "description": "A premium Photography service provider. We are a top photography company located in Windhoek. We offer the best prices and quality work. Open Mon-Fri 8am-5pm. Contact us today for a quote! We do everything related to Photography.",
+    "category": "photography",
+    "categoryName": "Photography",
+    "phone": "+264 81 1982497",
+    "address": "Plot 79, Windhoek",
+    "lat": -22.546687272884295,
+    "lng": 17.083235086073973,
+    "status": "draft",
+    "rating": 4.5,
+    "reviewCount": 12
+  },
+  {
+    "id": "photography-pro-services-2",
+    "name": "Photography Pro Services 2",
+    "description": "A premium Photography service provider. We are a top photography company located in Windhoek. We offer the best prices and quality work. Open Mon-Fri 8am-5pm. Contact us today for a quote! We do everything related to Photography.",
+    "category": "photography",
+    "categoryName": "Photography",
+    "phone": "+264 81 6386422",
+    "address": "Plot 31, Windhoek",
+    "lat": -22.577412313731706,
+    "lng": 17.03586000229193,
+    "status": "draft",
+    "rating": 4.5,
+    "reviewCount": 12
+  }
+]

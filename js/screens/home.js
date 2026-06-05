@@ -18,7 +18,7 @@ export function renderHomeScreen(container) {
       <!-- Header -->
       <div class="home-header">
         <div class="home-greeting">
-          <span class="greeting-text">${greeting} 👋</span>
+          <span class="greeting-text">${greeting}</span>
           <div class="location-text">
             ${icons.location}
             Windhoek, Namibia
@@ -106,6 +106,11 @@ export function renderHomeScreen(container) {
   document.getElementById('home-search-bar').addEventListener('click', () => {
     clearInterval(placeholderInterval);
     navigateTo('search');
+  });
+
+  // Notification bell
+  document.getElementById('home-notif-btn')?.addEventListener('click', () => {
+    navigateTo('notifications');
   });
 
   // Category clicks

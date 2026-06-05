@@ -2,9 +2,36 @@
 // THE VENDOR — Dashboard Leads Screen
 // ============================================
 
-import { LEADS_DATA } from '../../dashboard-data.js';
+import { supabase } from '../../lib/supabase.js';
 
-export function renderDashboardLeads(container) {
+export async function renderDashboardLeads(container) {
+  container.innerHTML = `
+    <div class="dash-card-header" style="margin-bottom: var(--space-3);">
+      <h2 class="dash-card-title" style="font-size: 20px;">Leads Center</h2>
+    </div>
+    <div style="text-align: center; padding: 40px 0; color: var(--text-tertiary);">
+      <i data-lucide="loader-2" class="spin" style="width: 32px; height: 32px;"></i>
+      <p>Loading leads...</p>
+    </div>
+  `;
+
+  // Hydrate Lucide icons for loader
+  import('../../app.js').then(module => {
+    if (module.refreshIcons) module.refreshIcons();
+  });
+
+  // Fetch live leads
+  const { data: leadsData, error } = await supabase
+    .from('leads')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching leads:', error);
+  }
+
+  const leads = leadsData || [];
+
   container.innerHTML = `
     <div class="dash-card-header" style="margin-bottom: var(--space-3);">
       <h2 class="dash-card-title" style="font-size: 20px;">Leads Center</h2>
@@ -20,9 +47,19 @@ export function renderDashboardLeads(container) {
     </div>
 
     <div style="display: flex; flex-direction: column; gap: var(--space-3); padding-bottom: var(--space-4);">
-      ${LEADS_DATA.map(lead => renderLeadCard(lead)).join('')}
+      ${leads.length === 0 ? `
+        <div style="text-align: center; padding: 40px 0; color: var(--text-tertiary);">
+          <div style="margin-bottom: 12px;"><i data-lucide="inbox" style="width: 48px; height: 48px;"></i></div>
+          <p>No quote requests yet.</p>
+        </div>
+      ` : leads.map(lead => renderLeadCard(lead)).join('')}
     </div>
   `;
+
+  // Hydrate Lucide icons
+  import('../../app.js').then(module => {
+    if (module.refreshIcons) module.refreshIcons();
+  });
 }
 
 function renderLeadCard(lead) {
@@ -38,8 +75,8 @@ function renderLeadCard(lead) {
     <div class="lead-card ${isHighQuality}">
       <div class="lead-header">
         <div>
-          <div class="lead-customer">${lead.customer}</div>
-          <div class="data-sub">${lead.id} · ${lead.date}</div>
+          <div class="lead-customer">${lead.customer_name}</div>
+          <div class="data-sub">${lead.customer_contact} · ${new Date(lead.created_at).toLocaleDateString()}</div>
         </div>
         <div class="lead-badge ${statusClass}">
           ${lead.status}
@@ -49,16 +86,21 @@ function renderLeadCard(lead) {
       <div class="lead-details">
         <div class="lead-detail-item">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-          ${lead.service}
+          ${lead.service_requested || 'General Request'}
         </div>
         <div class="lead-detail-item">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-          ${lead.location}
+          ${lead.location || 'Not specified'}
         </div>
         <div class="lead-detail-item">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-          <span style="color: var(--green-600); font-weight: 600;">${lead.budget}</span>
+          <span style="color: var(--green-600); font-weight: 600;">${lead.budget || 'Not specified'}</span>
         </div>
+        ${lead.message ? `
+        <div class="lead-detail-item" style="margin-top: 8px; font-style: italic; color: var(--text-secondary);">
+          "${lead.message}"
+        </div>
+        ` : ''}
       </div>
 
       <div class="lead-actions">

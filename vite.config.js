@@ -8,5 +8,15 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
+    target: 'esnext',
+    minify: 'esbuild',
+    cssMinify: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['@supabase/supabase-js', '@google/generative-ai'],
+        },
+      },
+    },
   },
 });

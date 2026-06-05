@@ -5,9 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#0F2B4C" />
   <meta name="description" content="The Vendor — Discover trusted local businesses, service providers, and vendors across Namibia. Find Local. Hire Local." />
+  <meta name="keywords" content="Namibia businesses, vendors, local services, hire local, Windhoek services" />
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://thevendor.com.na/" />
+  <meta property="og:title" content="The Vendor — Namibia's Business Discovery Platform" />
+  <meta property="og:description" content="Discover trusted local businesses, service providers, and vendors across Namibia. Find Local. Hire Local." />
+  
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image" />
+  <meta property="twitter:url" content="https://thevendor.com.na/" />
+  <meta property="twitter:title" content="The Vendor — Namibia's Business Discovery Platform" />
+  <meta property="twitter:description" content="Discover trusted local businesses, service providers, and vendors across Namibia. Find Local. Hire Local." />
+
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>The Vendor — Namibia's Business Discovery Platform</title>
+
+  <!-- Preload Critical Fonts -->
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" as="style" />
 
   <!-- Google Fonts: Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -24,12 +41,14 @@
   <link rel="stylesheet" href="/styles/components.css" />
   <link rel="stylesheet" href="/styles/screens.css" />
   <link rel="stylesheet" href="/styles/dashboard.css" />
+  <link rel="stylesheet" href="/styles/auth.css" />
+  <link rel="stylesheet" href="/styles/registration.css" />
 
   <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <script defer src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
   <!-- Splash Screen -->
@@ -123,6 +142,9 @@
       <button class="btn-text onboarding-skip" id="onboarding-skip-btn">Skip</button>
     </div>
   </div>
+
+  <!-- Auth Screen -->
+  <div id="auth-screen" class="hidden"></div>
 
   <!-- Main App -->
   <div id="app" class="app hidden">

@@ -2,8 +2,9 @@
 // THE VENDOR — Search Screen
 // ============================================
 
-import { searchVendors, SEARCH_SUGGESTIONS, TRENDING_SEARCHES } from '../data.js';
+import { searchVendors, SEARCH_SUGGESTIONS, TRENDING_SEARCHES, CATEGORIES, VENDORS } from '../data.js';
 import { navigateTo, openVendorProfileById, icons } from '../app.js';
+import { getSemanticSearchCategories } from '../lib/ai.js';
 
 let searchTimeout = null;
 
@@ -55,7 +56,7 @@ export function renderSearchScreen(container) {
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => {
       handleSearch(e.target.value);
-    }, 200);
+    }, 400); // Increased debounce for AI
   });
 
   // Suggestion clicks
@@ -71,7 +72,7 @@ export function renderSearchScreen(container) {
   requestAnimationFrame(() => input?.focus());
 }
 
-function handleSearch(query) {
+async function handleSearch(query) {
   const content = document.getElementById('search-content');
   if (!content) return;
 
@@ -81,7 +82,40 @@ function handleSearch(query) {
     return;
   }
 
-  const results = searchVendors(query);
+  content.innerHTML = `
+    <div style="padding: var(--space-8); text-align: center; color: var(--text-tertiary);">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite;">
+        <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
+      </svg>
+      <p style="margin-top: var(--space-2); font-size: var(--text-sm);">Searching...</p>
+    </div>
+    <style>@keyframes spin { 100% { transform: rotate(360deg); } }</style>
+  `;
+
+  let results = searchVendors(query);
+
+  // Semantic AI Search if query seems descriptive
+  if (query.trim().split(' ').length >= 2 || results.length === 0) {
+    try {
+      const aiCategories = await getSemanticSearchCategories(query, CATEGORIES);
+      if (aiCategories.length > 0) {
+        const categoryIds = CATEGORIES.filter(c => aiCategories.includes(c.name)).map(c => c.id);
+        const semanticResults = VENDORS.filter(v => categoryIds.includes(v.category));
+        
+        const existingIds = new Set(results.map(v => v.id));
+        for (const v of semanticResults) {
+          if (!existingIds.has(v.id)) {
+            results.push(v);
+          }
+        }
+      }
+    } catch(e) {
+      console.error(e);
+    }
+  }
+
+  // Double check content exists after await
+  if (!document.getElementById('search-content')) return;
 
   content.innerHTML = `
     <div style="padding: var(--space-2) var(--space-4);">
@@ -127,7 +161,6 @@ function handleSearch(query) {
     </div>
   `;
 
-  // Bind result clicks
   content.querySelectorAll('[data-vendor-id]').forEach(card => {
     card.addEventListener('click', (e) => {
       if (e.target.closest('.btn-whatsapp')) return;
@@ -139,7 +172,6 @@ function handleSearch(query) {
     navigateTo('explore');
   });
 
-  // Stagger
   requestAnimationFrame(() => {
     content.querySelectorAll('.vendor-card-compact').forEach((el, i) => {
       el.style.opacity = '0';
