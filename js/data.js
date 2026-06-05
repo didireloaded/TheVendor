@@ -1,0 +1,847 @@
+// ============================================
+// THE VENDOR — Mock Data
+// Realistic Namibian vendors, categories, reviews
+// ============================================
+
+import { store } from './store.js';
+
+export const CATEGORIES = [
+  // --- Creative ---
+  { id: 'photography', slug: 'photography', name: 'Photography', icon: '<i data-lucide="camera" style="width: 24px; height: 24px;"></i>', color: 'var(--cat-photography)', count: 48, description: 'Professional photography services.', parentCategory: null, subcategories: ['Wedding', 'Corporate', 'Portrait', 'Real Estate'] },
+  { id: 'videography', slug: 'videography', name: 'Videography', icon: '<i data-lucide="video" style="width: 24px; height: 24px;"></i>', color: 'var(--cat-videography)', count: 22, description: 'Professional videography and film production.', parentCategory: null, subcategories: ['Wedding Video', 'Corporate Video', 'Music Video', 'Documentary'] },
+  { id: 'drone-services', slug: 'drone-services', name: 'Drone Services', icon: '<i data-lucide="plane" style="width: 24px; height: 24px;"></i>', color: 'var(--cat-drone)', count: 8, description: 'Aerial photography, videography, and surveying.', parentCategory: null, subcategories: ['Aerial Photography', 'Surveying', 'Inspections'] },
+  { id: 'graphic-design', slug: 'graphic-design', name: 'Graphic Design', icon: '<i data-lucide="palette" style="width: 24px; height: 24px;"></i>', color: 'var(--cat-graphic-design)', count: 18, description: 'Branding, logos, and visual design.', parentCategory: null, subcategories: ['Branding', 'Logo Design', 'Print Design', 'Packaging'] },
+  { id: 'web-development', slug: 'web-development', name: 'Web Development', icon: '<i data-lucide="code" style="width: 24px; height: 24px;"></i>', color: 'var(--cat-web-dev)', count: 12, description: 'Website and web application development.', parentCategory: null, subcategories: ['Websites', 'E-Commerce', 'Web Apps', 'WordPress'] },
+  { id: 'digital-marketing', slug: 'digital-marketing', name: 'Digital Marketing', icon: '<i data-lucide="megaphone" style="width: 24px; height: 24px;"></i>', color: 'var(--cat-digital-marketing)', count: 10, description: 'Social media, SEO, and online advertising.', parentCategory: null, subcategories: ['Social Media', 'SEO', 'Google Ads', 'Content Marketing'] },
+  { id: 'printing-services', slug: 'printing-services', name: 'Printing Services', icon: '<i data-lucide="printer" style="width: 24px; height: 24px;"></i>', color: 'var(--cat-printing)', count: 14, description: 'Commercial and digital printing.', parentCategory: null, subcategories: ['Business Cards', 'Banners', 'Flyers', 'Large Format'] },
+
+  // --- Entertainment ---
+  { id: 'djs', slug: 'djs', name: 'DJs', icon: '<i data-lucide="disc-3" style="width: 24px; height: 24px;"></i>', color: 'var(--cat-djs)', count: 25, description: 'Professional DJs for events and parties.', parentCategory: null, subcategories: ['Wedding DJ', 'Club DJ', 'Corporate DJ', 'Mobile DJ'] },
+  { id: 'mcs', slug: 'mcs', name: 'MCs', icon: '<i data-lucide="mic" style="width: 24px; height: 24px;"></i>', color: 'var(--cat-mcs)', count: 12, description: 'Masters of ceremony for events.', parentCategory: null, subcategories: ['Wedding MC', 'Corporate MC', 'Bilingual MC'] },
+  { id: 'event-planning', slug: 'event-planning', name: 'Event Planning', icon: '<i data-lucide="party-popper" style="width: 24px; height: 24px;"></i>', color: 'var(--cat-events)', count: 35, description: 'Event coordination and planning services.', parentCategory: null, subcategories: ['Weddings', 'Corporate', 'Private Parties', 'Festivals'] },
+  { id: 'decor', slug: 'decor', name: 'Decor', icon: '<i data-lucide="lamp" style="width: 24px; height: 24px;"></i>', color: 'var(--cat-decor)', count: 20, description: 'Event and interior decor services.', parentCategory: null, subcategories: ['Wedding Decor', 'Event Decor', 'Floral Arrangements', 'Balloon Decor'] },
+  { id: 'sound-lighting', slug: 'sound-lighting', name: 'Sound & Lighting', icon: '<i data-lucide="speaker" style="width: 24px; height: 24px;"></i>', color: 'var(--cat-sound-lighting)', count: 9, description: 'Professional sound and lighting equipment.', parentCategory: null, subcategories: ['PA Systems', 'Stage Lighting', 'AV Equipment'] },
+
+  // --- Food & Drink ---
+  { id: 'catering', slug: 'catering', name: 'Catering', icon: '<i data-lucide="utensils-crossed" style="width: 24px; height: 24px;"></i>', color: 'var(--cat-food)', count: 72, description: 'Catering for events and functions.', parentCategory: null, subcategories: ['Wedding Catering', 'Corporate Catering', 'Braai Catering', 'Private Chef'] },
+  { id: 'cake-makers', slug: 'cake-makers', name: 'Cake Makers', icon: '<i data-lucide="cake-slice" style="width: 24px; height: 24px;"></i>', color: 'var(--cat-cakes)', count: 28, description: 'Custom cakes and baked goods.', parentCategory: null, subcategories: ['Wedding Cakes', 'Birthday Cakes', 'Cupcakes', 'Pastries'] },
+  { id: 'restaurants', slug: 'restaurants', name: 'Restaurants', icon: '<i data-lucide="chef-hat" style="width: 24px; height: 24px;"></i>', color: 'var(--cat-restaurants)', count: 45, description: 'Restaurants and dining establishments.', parentCategory: null, subcategories: ['Fine Dining', 'Casual Dining', 'Fast Food', 'Takeaway'] },
+  { id: 'kapana-vendors', slug: 'kapana-vendors', name: 'Kapana Vendors', icon: '<i data-lucide="flame" style="width: 24px; height: 24px;"></i>', color: 'var(--cat-kapana)', count: 30, description: 'Traditional Namibian street food vendors.', parentCategory: null, subcategories: ['Kapana', 'Street BBQ', 'Braai Meat'] },
+  { id: 'food-trucks', slug: 'food-trucks', name: 'Food Trucks', icon: '<i data-lucide="truck" style="width: 24px; height: 24px;"></i>', color: 'var(--cat-food-trucks)', count: 15, description: 'Mobile food vendors and food trucks.', parentCategory: null, subcategories: ['Burgers', 'Tacos', 'Pizza', 'Ice Cream'] },
+
+  // --- Beauty & Fashion ---
+  { id: 'hair-stylists', slug: 'hair-stylists', name: 'Hair Stylists', icon: '<i data-lucide="scissors" style="width: 24px; height: 24px;"></i>', color: 'var(--cat-beauty)', count: 63, description: 'Hair styling, braiding, and treatments.', parentCategory: null, subcategories: ['Braiding', 'Coloring', 'Extensions', 'Treatments'] },
+  { id: 'barbers', slug: 'barbers', name: 'Barbers', icon: '<i data-lucide="scissors" style="width: 24px; height: 24px;"></i>', color: 'var(--cat-barbers)', count: 40, description: 'Men\'s grooming and barbershop services.', parentCategory: null, subcategories: ['Haircuts', 'Beard Trim', 'Shaves', 'Grooming'] },
+  { id: 'makeup-artists', slug: 'makeup-artists', name: 'Makeup Artists', icon: '<i data-lucide="sparkles" style="width: 24px; height: 24px;"></i>', color: 'var(--cat-makeup)', count: 22, description: 'Professional makeup for all occasions.', parentCategory: null, subcategories: ['Bridal', 'Editorial', 'Everyday Glam', 'Special Effects'] },
+  { id: 'nail-technicians', slug: 'nail-technicians', name: 'Nail Technicians', icon: '<i data-lucide="paintbrush" style="width: 24px; height: 24px;"></i>', color: 'var(--cat-nails)', count: 18, description: 'Manicures, pedicures, and nail art.', parentCategory: null, subcategories: ['Gel Nails', 'Acrylic', 'Nail Art', 'Pedicure'] },
+  { id: 'fashion-designers', slug: 'fashion-designers', name: 'Fashion Designers', icon: '<i data-lucide="shirt" style="width: 24px; height: 24px;"></i>', color: 'var(--cat-fashion)', count: 14, description: 'Custom fashion design and clothing.', parentCategory: null, subcategories: ['Custom Outfits', 'Bridal Wear', 'Traditional Wear', 'Streetwear'] },
+  { id: 'tailors', slug: 'tailors', name: 'Tailors', icon: '<i data-lucide="ruler" style="width: 24px; height: 24px;"></i>', color: 'var(--cat-tailors)', count: 20, description: 'Tailoring, alterations, and custom clothing.', parentCategory: null, subcategories: ['Suits', 'Alterations', 'Traditional Attire', 'Uniforms'] },
+
+  // --- Automotive ---
+  { id: 'mechanics', slug: 'mechanics', name: 'Mechanics', icon: '<i data-lucide="wrench" style="width: 24px; height: 24px;"></i>', color: 'var(--cat-automotive)', count: 41, description: 'Auto repair and maintenance services.', parentCategory: null, subcategories: ['General Service', 'Engine Repair', 'Brakes', 'Diagnostics'] },
+  { id: 'auto-electricians', slug: 'auto-electricians', name: 'Auto Electricians', icon: '<i data-lucide="zap" style="width: 24px; height: 24px;"></i>', color: 'var(--cat-auto-electrical)', count: 12, description: 'Vehicle electrical system specialists.', parentCategory: null, subcategories: ['Wiring', 'Starters', 'Alternators', 'Car Audio'] },
+  { id: 'car-washes', slug: 'car-washes', name: 'Car Washes', icon: '<i data-lucide="droplets" style="width: 24px; height: 24px;"></i>', color: 'var(--cat-car-wash)', count: 35, description: 'Car cleaning and detailing.', parentCategory: null, subcategories: ['Hand Wash', 'Detailing', 'Interior Clean', 'Wax & Polish'] },
+  { id: 'towing-services', slug: 'towing-services', name: 'Towing Services', icon: '<i data-lucide="truck" style="width: 24px; height: 24px;"></i>', color: 'var(--cat-towing)', count: 8, description: 'Vehicle towing and roadside assistance.', parentCategory: null, subcategories: ['Flatbed', 'Roadside Assist', 'Long Distance'] },
+
+  // --- Home & Trade ---
+  { id: 'plumbers', slug: 'plumbers', name: 'Plumbers', icon: '<i data-lucide="pipette" style="width: 24px; height: 24px;"></i>', color: 'var(--cat-plumbers)', count: 20, description: 'Plumbing installation and repairs.', parentCategory: null, subcategories: ['Repairs', 'Installation', 'Drain Cleaning', 'Geyser Service'] },
+  { id: 'electricians', slug: 'electricians', name: 'Electricians', icon: '<i data-lucide="plug-zap" style="width: 24px; height: 24px;"></i>', color: 'var(--cat-electricians)', count: 18, description: 'Electrical installation and repairs.', parentCategory: null, subcategories: ['Wiring', 'Solar', 'Generators', 'Fault Finding'] },
+  { id: 'builders', slug: 'builders', name: 'Builders', icon: '<i data-lucide="hammer" style="width: 24px; height: 24px;"></i>', color: 'var(--cat-construction)', count: 29, description: 'Construction and building services.', parentCategory: null, subcategories: ['New Builds', 'Renovations', 'Extensions', 'Boundary Walls'] },
+  { id: 'painters', slug: 'painters', name: 'Painters', icon: '<i data-lucide="paintbrush-vertical" style="width: 24px; height: 24px;"></i>', color: 'var(--cat-painters)', count: 15, description: 'Interior and exterior painting.', parentCategory: null, subcategories: ['Interior', 'Exterior', 'Commercial', 'Decorative'] },
+  { id: 'cleaning-services', slug: 'cleaning-services', name: 'Cleaning Services', icon: '<i data-lucide="sparkles" style="width: 24px; height: 24px;"></i>', color: 'var(--cat-cleaning)', count: 22, description: 'Domestic and commercial cleaning.', parentCategory: null, subcategories: ['Domestic', 'Office', 'Deep Cleaning', 'Post-Construction'] },
+  { id: 'security-services', slug: 'security-services', name: 'Security Services', icon: '<i data-lucide="shield" style="width: 24px; height: 24px;"></i>', color: 'var(--cat-security)', count: 16, description: 'Security guards and systems.', parentCategory: null, subcategories: ['Guards', 'CCTV', 'Alarms', 'Access Control'] },
+
+  // --- Professional Services ---
+  { id: 'it-services', slug: 'it-services', name: 'IT Services', icon: '<i data-lucide="cpu" style="width: 24px; height: 24px;"></i>', color: 'var(--cat-technology)', count: 22, description: 'IT support, networking, and infrastructure.', parentCategory: null, subcategories: ['IT Support', 'Networking', 'Cloud Services', 'Managed IT'] },
+  { id: 'computer-repairs', slug: 'computer-repairs', name: 'Computer Repairs', icon: '<i data-lucide="monitor" style="width: 24px; height: 24px;"></i>', color: 'var(--cat-computer-repairs)', count: 14, description: 'Computer and device repairs.', parentCategory: null, subcategories: ['Laptop Repair', 'Desktop Repair', 'Data Recovery', 'Screen Replacement'] },
+  { id: 'lawyers', slug: 'lawyers', name: 'Lawyers', icon: '<i data-lucide="scale" style="width: 24px; height: 24px;"></i>', color: 'var(--cat-lawyers)', count: 20, description: 'Legal services and representation.', parentCategory: null, subcategories: ['Corporate', 'Family Law', 'Criminal', 'Property'] },
+  { id: 'accountants', slug: 'accountants', name: 'Accountants', icon: '<i data-lucide="calculator" style="width: 24px; height: 24px;"></i>', color: 'var(--cat-accountants)', count: 18, description: 'Accounting, tax, and financial services.', parentCategory: null, subcategories: ['Tax Returns', 'Bookkeeping', 'Auditing', 'Payroll'] },
+  { id: 'business-consultants', slug: 'business-consultants', name: 'Business Consultants', icon: '<i data-lucide="briefcase" style="width: 24px; height: 24px;"></i>', color: 'var(--cat-business)', count: 26, description: 'Business consulting and advisory.', parentCategory: null, subcategories: ['Strategy', 'Management', 'HR', 'Operations'] },
+  { id: 'real-estate-agents', slug: 'real-estate-agents', name: 'Real Estate Agents', icon: '<i data-lucide="building-2" style="width: 24px; height: 24px;"></i>', color: 'var(--cat-real-estate)', count: 22, description: 'Property sales, rentals, and management.', parentCategory: null, subcategories: ['Sales', 'Rentals', 'Commercial', 'Valuations'] },
+
+  // --- Travel & Lifestyle ---
+  { id: 'accommodation', slug: 'accommodation', name: 'Accommodation', icon: '<i data-lucide="bed" style="width: 24px; height: 24px;"></i>', color: 'var(--cat-accommodation)', count: 38, description: 'Hotels, guesthouses, and B&Bs.', parentCategory: null, subcategories: ['Hotels', 'Guesthouses', 'B&B', 'Camping'] },
+  { id: 'guest-houses', slug: 'guest-houses', name: 'Guest Houses', icon: '<i data-lucide="home" style="width: 24px; height: 24px;"></i>', color: 'var(--cat-guest-houses)', count: 25, description: 'Guesthouses and self-catering accommodation.', parentCategory: null, subcategories: ['Self-Catering', 'B&B', 'Backpackers'] },
+  { id: 'lodges', slug: 'lodges', name: 'Lodges', icon: '<i data-lucide="mountain" style="width: 24px; height: 24px;"></i>', color: 'var(--cat-lodges)', count: 18, description: 'Safari lodges and bush camps.', parentCategory: null, subcategories: ['Safari Lodge', 'Bush Camp', 'Eco Lodge', 'Luxury Lodge'] },
+  { id: 'tour-guides', slug: 'tour-guides', name: 'Tour Guides', icon: '<i data-lucide="map" style="width: 24px; height: 24px;"></i>', color: 'var(--cat-tour-guides)', count: 15, description: 'Tour guides and travel operators.', parentCategory: null, subcategories: ['City Tours', 'Safari Tours', 'Adventure Tours', 'Cultural Tours'] },
+  { id: 'fitness-trainers', slug: 'fitness-trainers', name: 'Fitness Trainers', icon: '<i data-lucide="dumbbell" style="width: 24px; height: 24px;"></i>', color: 'var(--cat-fitness)', count: 12, description: 'Personal training and fitness coaching.', parentCategory: null, subcategories: ['Personal Training', 'Group Fitness', 'Online Coaching', 'Nutrition'] },
+  { id: 'gyms', slug: 'gyms', name: 'Gyms', icon: '<i data-lucide="heart-pulse" style="width: 24px; height: 24px;"></i>', color: 'var(--cat-health)', count: 19, description: 'Fitness centers and gyms.', parentCategory: null, subcategories: ['Commercial Gym', 'CrossFit', 'Yoga Studio', 'Boxing Gym'] },
+
+  // --- Transport ---
+  { id: 'transport-services', slug: 'transport-services', name: 'Transport Services', icon: '<i data-lucide="bus" style="width: 24px; height: 24px;"></i>', color: 'var(--cat-transport)', count: 14, description: 'Transport and logistics services.', parentCategory: null, subcategories: ['Shuttle', 'Airport Transfer', 'Moving', 'Logistics'] },
+  { id: 'courier-services', slug: 'courier-services', name: 'Courier Services', icon: '<i data-lucide="package" style="width: 24px; height: 24px;"></i>', color: 'var(--cat-courier)', count: 10, description: 'Parcel delivery and courier services.', parentCategory: null, subcategories: ['Same Day', 'Next Day', 'Express', 'International'] },
+];
+
+export const VENDORS = [
+  {
+    id: 'windhoek-plumbing',
+    name: 'MTC Namibia',
+    category: 'it-services',
+    status: 'active',
+    createdAt: '2023-01-01T00:00:00Z',
+    updatedAt: '2023-01-01T00:00:00Z',
+    verificationDetails: { status: 'verified', date: '2023-01-01' },
+    categoryName: 'IT & Telecom Services',
+    description: 'Namibia’s leading telecommunications provider, offering mobile network, internet, and IT solutions for individuals and businesses.',
+    rating: 4.8,
+    reviewCount: 42,
+    verified: true,
+    verifiedLevel: 'blue',
+    featured: true,
+    premium: true,
+    lat: -22.5609,
+    lng: 17.0658,
+    address: 'Windhoek Central, Windhoek',
+    distance: 3.5,
+    isOpen: true,
+    phone: '+264 81 999 8888',
+    whatsapp: '+264819998888',
+    email: 'info@mtc.com.na',
+    website: 'https://mtc.com.na',
+    instagram: '@mtcnamibia',
+    facebook: 'MTCNamibia',
+    coverGradient: 'linear-gradient(135deg, #0284c7, #0369a1, #075985)',
+    logoGradient: 'linear-gradient(135deg, #0284c7, #0369a1)',
+    logoInitials: 'MTC',
+    coverImage: 'https://upload.wikimedia.org/wikipedia/commons/a/af/Mtc_Namibia_Logo.svg',
+    logoImage: 'https://upload.wikimedia.org/wikipedia/commons/a/af/Mtc_Namibia_Logo.svg',
+    galleryColors: ['#0284c7', '#0369a1', '#075985', '#38bdf8', '#7dd3fc', '#bae6fd'],
+    hours: {
+      monday: '07:00 - 17:00',
+      tuesday: '07:00 - 17:00',
+      wednesday: '07:00 - 17:00',
+      thursday: '07:00 - 17:00',
+      friday: '07:00 - 17:00',
+      saturday: '08:00 - 13:00',
+      sunday: 'Closed',
+    },
+    services: [
+      { name: 'Business Internet', description: 'High-speed business internet and fiber solutions', price: 'From N$500', color: '#0284c7' },
+      { name: 'Mobile Plans', description: 'Postpaid and prepaid mobile plans', price: 'Get Quote', color: '#0369a1' }
+    ],
+    reviews: [
+      { author: 'John S.', avatar: 'JS', avatarColor: '#0284c7', rating: 5, date: '1 month ago', text: 'Great internet speed and reliable coverage!' }
+    ],
+  },
+  {
+    id: 'visionhaus',
+    name: 'Canon Professional Services',
+    category: 'photography',
+    status: 'active',
+    createdAt: '2023-01-01T00:00:00Z',
+    updatedAt: '2023-01-01T00:00:00Z',
+    verificationDetails: { status: 'verified', date: '2023-01-01' },
+    categoryName: 'Photography & Videography',
+    description: 'Award-winning creative studio specializing in wedding photography, corporate videography, drone coverage, and livestream production. We capture moments that tell your story beautifully. Trusted by over 200 Namibian couples and leading brands.',
+    rating: 4.9,
+    reviewCount: 127,
+    verified: true,
+    verifiedLevel: 'gold',
+    featured: true,
+    premium: true,
+    lat: -22.5609,
+    lng: 17.0658,
+    address: 'Klein Windhoek, Windhoek',
+    distance: 1.2,
+    isOpen: true,
+    phone: '+264 81 234 5678',
+    whatsapp: '+264812345678',
+    email: 'info@canon.co.za',
+    website: 'https://canon.co.za',
+    instagram: '@canonrsa',
+    facebook: 'CanonSouthAfrica',
+    coverGradient: 'linear-gradient(135deg, #1a1a2e, #16213e, #0f3460)',
+    logoGradient: 'linear-gradient(135deg, #1A6FEF, #0F54C4)',
+    logoInitials: 'CA',
+    coverImage: 'https://upload.wikimedia.org/wikipedia/commons/f/f3/Canon_wordmark.svg',
+    logoImage: 'https://upload.wikimedia.org/wikipedia/commons/f/f3/Canon_wordmark.svg',
+    galleryColors: ['#1a1a2e', '#16213e', '#0f3460', '#533483', '#2b2d42', '#8d99ae'],
+    hours: {
+      monday: '08:00 - 17:00',
+      tuesday: '08:00 - 17:00',
+      wednesday: '08:00 - 17:00',
+      thursday: '08:00 - 17:00',
+      friday: '08:00 - 17:00',
+      saturday: '09:00 - 14:00',
+      sunday: 'Closed',
+    },
+    services: [
+      { name: 'Wedding Photography', description: 'Full-day coverage with two photographers, 500+ edited images, online gallery', price: 'N$12,000', color: '#1a1a2e' },
+      { name: 'Event Videography', description: 'Professional multi-camera setup, cinematic editing, highlight reel', price: 'N$8,500', color: '#16213e' },
+      { name: 'Drone Coverage', description: 'Aerial photography and videography for events, properties, and commercial projects', price: 'N$3,500', color: '#0f3460' },
+      { name: 'Livestream Production', description: 'Multi-camera HD livestreaming to YouTube, Facebook, and custom platforms', price: 'N$6,000', color: '#533483' },
+    ],
+    reviews: [
+      { author: 'Sarah M.', avatar: 'SM', avatarColor: '#EC4899', rating: 5, date: '2 weeks ago', text: 'VisionHaus captured our wedding beautifully. Every photo tells a story. The drone shots were absolutely breathtaking. Highly recommend!', hasPhotos: true, photoColors: ['#f0abfc', '#c084fc'] },
+      { author: 'David K.', avatar: 'DK', avatarColor: '#06B6D4', rating: 5, date: '1 month ago', text: 'Used them for our corporate event. Extremely professional, punctual, and the final video exceeded expectations.', reply: 'Thank you David! It was a pleasure working with your team. Looking forward to the next event!' },
+      { author: 'Anna T.', avatar: 'AT', avatarColor: '#10B981', rating: 4, date: '2 months ago', text: 'Great quality work. Delivery took a bit longer than expected but the results were worth the wait.' },
+    ],
+  },
+  {
+    id: 'katutura-cakes',
+    name: 'Katutura Cakes',
+    category: 'food',
+    status: 'active',
+    createdAt: '2023-01-01T00:00:00Z',
+    updatedAt: '2023-01-01T00:00:00Z',
+    verificationDetails: { status: 'verified', date: '2023-01-01' },
+    categoryName: 'Cakes & Baking',
+    description: 'Home-baked artisan cakes for every celebration. Specializing in wedding cakes, birthday cakes, cupcakes, and pastries. Made with love in Katutura using the finest local ingredients.',
+    rating: 4.8,
+    reviewCount: 89,
+    verified: true,
+    verifiedLevel: 'blue',
+    featured: false,
+    premium: false,
+    lat: -22.5350,
+    lng: 17.0530,
+    address: 'Katutura, Windhoek',
+    distance: 3.8,
+    isOpen: true,
+    phone: '+264 81 345 6789',
+    whatsapp: '+264813456789',
+    email: 'orders@kataturacakes.na',
+    website: null,
+    instagram: '@kataturacakes',
+    facebook: 'KataturaCakesNamibia',
+    coverGradient: 'linear-gradient(135deg, #fbbf24, #f59e0b, #d97706)',
+    logoGradient: 'linear-gradient(135deg, #F97316, #D97706)',
+    logoInitials: 'KC',
+    galleryColors: ['#fbbf24', '#f59e0b', '#fb923c', '#fdba74', '#fcd34d', '#fef3c7'],
+    hours: {
+      monday: '06:00 - 18:00',
+      tuesday: '06:00 - 18:00',
+      wednesday: '06:00 - 18:00',
+      thursday: '06:00 - 18:00',
+      friday: '06:00 - 20:00',
+      saturday: '07:00 - 16:00',
+      sunday: '08:00 - 14:00',
+    },
+    services: [
+      { name: 'Wedding Cakes', description: 'Multi-tiered custom wedding cakes with your choice of flavors and design', price: 'From N$2,500', color: '#fbbf24' },
+      { name: 'Birthday Cakes', description: 'Custom themed cakes for all ages. Character cakes, number cakes, and more', price: 'From N$350', color: '#f59e0b' },
+      { name: 'Cupcake Platters', description: 'Assorted flavored cupcakes beautifully presented for events', price: 'N$15 each', color: '#fb923c' },
+      { name: 'Pastry Boxes', description: 'Assorted pastries and treats for corporate events and celebrations', price: 'From N$200', color: '#fdba74' },
+    ],
+    reviews: [
+      { author: 'Maria J.', avatar: 'MJ', avatarColor: '#F97316', rating: 5, date: '1 week ago', text: 'The most incredible wedding cake! Everyone asked where we ordered it. Beautiful and delicious!' },
+      { author: 'Peter N.', avatar: 'PN', avatarColor: '#8B5CF6', rating: 5, date: '3 weeks ago', text: 'My daughter loved her unicorn birthday cake! Perfect in every way.' },
+    ],
+  },
+  {
+    id: 'autofix',
+    name: 'AutoFix Namibia',
+    category: 'automotive',
+    status: 'active',
+    createdAt: '2023-01-01T00:00:00Z',
+    updatedAt: '2023-01-01T00:00:00Z',
+    verificationDetails: { status: 'verified', date: '2023-01-01' },
+    categoryName: 'Mechanics & Auto Services',
+    description: 'Full-service auto repair and maintenance workshop. From basic servicing to engine overhauls, diagnostics, and electrical repairs. All vehicle makes and models. Fair pricing and honest service.',
+    rating: 4.6,
+    reviewCount: 203,
+    verified: true,
+    verifiedLevel: 'blue',
+    featured: true,
+    premium: true,
+    lat: -22.5700,
+    lng: 17.0400,
+    address: 'Windhoek West, Windhoek',
+    distance: 2.5,
+    isOpen: true,
+    phone: '+264 61 234 567',
+    whatsapp: '+264812234567',
+    email: 'service@autofix.na',
+    website: 'https://autofix.na',
+    instagram: '@autofix_na',
+    facebook: 'AutoFixNamibia',
+    coverGradient: 'linear-gradient(135deg, #dc2626, #991b1b, #7f1d1d)',
+    logoGradient: 'linear-gradient(135deg, #EF4444, #DC2626)',
+    logoInitials: 'AF',
+    galleryColors: ['#dc2626', '#b91c1c', '#991b1b', '#ef4444', '#f87171', '#fca5a5'],
+    hours: {
+      monday: '07:30 - 17:30',
+      tuesday: '07:30 - 17:30',
+      wednesday: '07:30 - 17:30',
+      thursday: '07:30 - 17:30',
+      friday: '07:30 - 17:00',
+      saturday: '08:00 - 13:00',
+      sunday: 'Closed',
+    },
+    services: [
+      { name: 'Full Service', description: 'Complete vehicle service including oil change, filter replacement, and multi-point inspection', price: 'From N$1,200', color: '#dc2626' },
+      { name: 'Engine Diagnostics', description: 'Advanced computer diagnostics to identify engine issues accurately', price: 'N$450', color: '#991b1b' },
+      { name: 'Brake Service', description: 'Brake pad replacement, disc resurfacing, and complete brake system inspection', price: 'From N$800', color: '#b91c1c' },
+      { name: 'Electrical Repairs', description: 'Auto electrical fault finding, alternator, starter motor, and wiring repairs', price: 'From N$500', color: '#ef4444' },
+    ],
+    reviews: [
+      { author: 'Johannes H.', avatar: 'JH', avatarColor: '#EF4444', rating: 5, date: '5 days ago', text: 'Honest and reliable. Fixed my Toyota at a fair price. No unnecessary upselling. Will definitely come back.' },
+      { author: 'Lisa V.', avatar: 'LV', avatarColor: '#A855F7', rating: 4, date: '2 weeks ago', text: 'Good service overall. Had to wait a bit but the work was quality. Reasonable prices.' },
+      { author: 'Michael S.', avatar: 'MS', avatarColor: '#06B6D4', rating: 5, date: '1 month ago', text: 'They saved my engine! Other workshops wanted to replace it. These guys diagnosed the real issue and fixed it for much less.', reply: 'Thank you Michael! We always try to find the most cost-effective solution for our customers.' },
+    ],
+  },
+  {
+    id: 'glow-studio',
+    name: 'Glow Beauty Studio',
+    category: 'beauty',
+    status: 'active',
+    createdAt: '2023-01-01T00:00:00Z',
+    updatedAt: '2023-01-01T00:00:00Z',
+    verificationDetails: { status: 'verified', date: '2023-01-01' },
+    categoryName: 'Beauty & Makeup',
+    description: 'Premium beauty studio offering professional makeup, skincare treatments, nail art, and bridal packages. Creating beautiful, confident looks for everyday and special occasions.',
+    rating: 4.9,
+    reviewCount: 156,
+    verified: true,
+    verifiedLevel: 'gold',
+    featured: true,
+    premium: true,
+    lat: -22.5560,
+    lng: 17.0780,
+    address: 'Maerua Mall Area, Windhoek',
+    distance: 0.8,
+    isOpen: true,
+    phone: '+264 81 456 7890',
+    whatsapp: '+264814567890',
+    email: 'bookings@glowstudio.na',
+    website: 'https://glowstudio.na',
+    instagram: '@glowstudio_na',
+    facebook: 'GlowBeautyStudioNamibia',
+    coverGradient: 'linear-gradient(135deg, #c084fc, #a855f7, #7c3aed)',
+    logoGradient: 'linear-gradient(135deg, #A855F7, #7C3AED)',
+    logoInitials: 'GS',
+    galleryColors: ['#c084fc', '#a855f7', '#7c3aed', '#e879f9', '#f0abfc', '#d8b4fe'],
+    hours: {
+      monday: '09:00 - 18:00',
+      tuesday: '09:00 - 18:00',
+      wednesday: '09:00 - 18:00',
+      thursday: '09:00 - 20:00',
+      friday: '09:00 - 18:00',
+      saturday: '08:00 - 16:00',
+      sunday: 'Closed',
+    },
+    services: [
+      { name: 'Bridal Makeup', description: 'Full bridal glam with trial session, on-location service, and touch-up kit', price: 'N$3,500', color: '#c084fc' },
+      { name: 'Facial Treatment', description: 'Deep cleansing facial with premium products, extraction, and hydration', price: 'N$650', color: '#a855f7' },
+      { name: 'Nail Art', description: 'Creative nail designs, gel manicure, acrylic extensions', price: 'From N$250', color: '#e879f9' },
+      { name: 'Everyday Glam', description: 'Natural-looking makeup for events, photoshoots, and special occasions', price: 'N$800', color: '#7c3aed' },
+    ],
+    reviews: [
+      { author: 'Ndeshi P.', avatar: 'NP', avatarColor: '#EC4899', rating: 5, date: '3 days ago', text: 'Absolutely loved my bridal makeup! Lasted the entire day and evening. Every guest complimented me. Thank you Glow!', hasPhotos: true, photoColors: ['#f9a8d4', '#fbcfe8'] },
+      { author: 'Tanya R.', avatar: 'TR', avatarColor: '#14B8A6', rating: 5, date: '1 week ago', text: 'Best facial I have ever had. My skin has been glowing since. Already booked my next appointment!' },
+    ],
+  },
+  {
+    id: 'dj-flames',
+    name: 'DJ Flames',
+    category: 'events',
+    status: 'active',
+    createdAt: '2023-01-01T00:00:00Z',
+    updatedAt: '2023-01-01T00:00:00Z',
+    verificationDetails: { status: 'verified', date: '2023-01-01' },
+    categoryName: 'DJ & Entertainment',
+    description: 'Namibia\'s premier DJ and MC for weddings, corporate events, private parties, and festivals. Professional sound and lighting equipment. Creating unforgettable atmospheres since 2015.',
+    rating: 4.7,
+    reviewCount: 94,
+    verified: true,
+    verifiedLevel: 'blue',
+    featured: false,
+    premium: false,
+    lat: -22.5480,
+    lng: 17.0620,
+    address: 'Eros, Windhoek',
+    distance: 1.8,
+    isOpen: false,
+    phone: '+264 81 567 8901',
+    whatsapp: '+264815678901',
+    email: 'bookings@djflames.na',
+    website: null,
+    instagram: '@djflames_na',
+    facebook: 'DJFlamesNamibia',
+    coverGradient: 'linear-gradient(135deg, #ec4899, #db2777, #be185d)',
+    logoGradient: 'linear-gradient(135deg, #EC4899, #DB2777)',
+    logoInitials: 'DF',
+    galleryColors: ['#ec4899', '#db2777', '#be185d', '#f472b6', '#f9a8d4', '#fce7f3'],
+    hours: {
+      monday: 'By Appointment',
+      tuesday: 'By Appointment',
+      wednesday: 'By Appointment',
+      thursday: 'By Appointment',
+      friday: '18:00 - 02:00',
+      saturday: '14:00 - 02:00',
+      sunday: 'By Appointment',
+    },
+    services: [
+      { name: 'Wedding DJ & MC', description: 'Complete wedding entertainment package with sound, lighting, and MC services', price: 'N$8,000', color: '#ec4899' },
+      { name: 'Corporate Events', description: 'Professional entertainment for conferences, launches, and corporate functions', price: 'N$5,000', color: '#db2777' },
+      { name: 'Private Parties', description: 'Birthday parties, house parties, and private celebrations', price: 'From N$3,000', color: '#be185d' },
+      { name: 'Sound & Light Hire', description: 'Professional sound system and lighting equipment rental', price: 'From N$2,000', color: '#f472b6' },
+    ],
+    reviews: [
+      { author: 'Thomas M.', avatar: 'TM', avatarColor: '#F59E0B', rating: 5, date: '1 week ago', text: 'DJ Flames kept the dance floor packed all night! Best wedding DJ in Windhoek. Amazing song selection and energy!' },
+      { author: 'Claudia S.', avatar: 'CS', avatarColor: '#6366F1', rating: 4, date: '1 month ago', text: 'Great DJ for our corporate year-end function. Professional setup and good music variety.' },
+    ],
+  },
+  {
+    id: 'nambuild',
+    name: 'NamBuild Construction',
+    category: 'construction',
+    status: 'active',
+    createdAt: '2023-01-01T00:00:00Z',
+    updatedAt: '2023-01-01T00:00:00Z',
+    verificationDetails: { status: 'verified', date: '2023-01-01' },
+    categoryName: 'Construction & Building',
+    description: 'Reliable construction company for residential and commercial projects. From home renovations to new builds, extensions, and maintenance. Licensed, insured, and experienced.',
+    rating: 4.5,
+    reviewCount: 67,
+    verified: true,
+    verifiedLevel: 'blue',
+    featured: false,
+    premium: false,
+    lat: -22.5800,
+    lng: 17.0500,
+    address: 'Southern Industrial, Windhoek',
+    distance: 4.2,
+    isOpen: true,
+    phone: '+264 61 345 678',
+    whatsapp: '+264813345678',
+    email: 'info@nambuild.na',
+    website: 'https://nambuild.na',
+    instagram: null,
+    facebook: 'NamBuildConstruction',
+    coverGradient: 'linear-gradient(135deg, #78716c, #57534e, #44403c)',
+    logoGradient: 'linear-gradient(135deg, #78716C, #57534E)',
+    logoInitials: 'NB',
+    galleryColors: ['#78716c', '#57534e', '#44403c', '#a8a29e', '#d6d3d1', '#e7e5e4'],
+    hours: {
+      monday: '07:00 - 17:00',
+      tuesday: '07:00 - 17:00',
+      wednesday: '07:00 - 17:00',
+      thursday: '07:00 - 17:00',
+      friday: '07:00 - 16:00',
+      saturday: '08:00 - 12:00',
+      sunday: 'Closed',
+    },
+    services: [
+      { name: 'New Home Builds', description: 'Complete residential construction from foundation to finishing', price: 'Get Quote', color: '#78716c' },
+      { name: 'Renovations', description: 'Kitchen, bathroom, and home renovation projects', price: 'Get Quote', color: '#57534e' },
+      { name: 'Extensions', description: 'Home extensions, extra rooms, garages, and boundary walls', price: 'Get Quote', color: '#44403c' },
+      { name: 'Maintenance', description: 'General home maintenance, painting, plumbing, and electrical', price: 'From N$500', color: '#a8a29e' },
+    ],
+    reviews: [
+      { author: 'Fritz G.', avatar: 'FG', avatarColor: '#78716C', rating: 5, date: '2 weeks ago', text: 'Built our family home. Excellent quality workmanship and they stayed within budget. Truly professional team.' },
+    ],
+  },
+  {
+    id: 'technam',
+    name: 'TechNam Solutions',
+    category: 'technology',
+    status: 'active',
+    createdAt: '2023-01-01T00:00:00Z',
+    updatedAt: '2023-01-01T00:00:00Z',
+    verificationDetails: { status: 'verified', date: '2023-01-01' },
+    categoryName: 'IT & Technology',
+    description: 'Namibia\'s trusted IT solutions provider. Web development, app development, network infrastructure, cloud solutions, and IT support. Empowering Namibian businesses with technology.',
+    rating: 4.8,
+    reviewCount: 45,
+    verified: true,
+    verifiedLevel: 'gold',
+    featured: false,
+    premium: true,
+    lat: -22.5620,
+    lng: 17.0800,
+    address: 'Klein Windhoek, Windhoek',
+    distance: 1.5,
+    isOpen: true,
+    phone: '+264 61 456 789',
+    whatsapp: '+264814456789',
+    email: 'hello@technam.na',
+    website: 'https://technam.na',
+    instagram: '@technam_na',
+    facebook: 'TechNamSolutions',
+    coverGradient: 'linear-gradient(135deg, #06b6d4, #0891b2, #0e7490)',
+    logoGradient: 'linear-gradient(135deg, #06B6D4, #0891B2)',
+    logoInitials: 'TN',
+    galleryColors: ['#06b6d4', '#0891b2', '#0e7490', '#22d3ee', '#67e8f9', '#a5f3fc'],
+    hours: {
+      monday: '08:00 - 17:00',
+      tuesday: '08:00 - 17:00',
+      wednesday: '08:00 - 17:00',
+      thursday: '08:00 - 17:00',
+      friday: '08:00 - 16:30',
+      saturday: 'Closed',
+      sunday: 'Closed',
+    },
+    services: [
+      { name: 'Web Development', description: 'Custom websites and web applications using modern technologies', price: 'From N$8,000', color: '#06b6d4' },
+      { name: 'Mobile Apps', description: 'iOS and Android app development for businesses', price: 'From N$25,000', color: '#0891b2' },
+      { name: 'IT Support', description: 'Managed IT support, troubleshooting, and maintenance', price: 'N$2,500/month', color: '#0e7490' },
+      { name: 'Cloud Solutions', description: 'Cloud migration, hosting, and infrastructure management', price: 'Get Quote', color: '#22d3ee' },
+    ],
+    reviews: [
+      { author: 'Brendan L.', avatar: 'BL', avatarColor: '#06B6D4', rating: 5, date: '1 month ago', text: 'TechNam built our company website and it looks amazing. Fast, responsive, and exactly what we needed.' },
+    ],
+  },
+  {
+    id: 'fresh-catering',
+    name: 'Sodexo Services',
+    category: 'food',
+    status: 'active',
+    createdAt: '2023-01-01T00:00:00Z',
+    updatedAt: '2023-01-01T00:00:00Z',
+    verificationDetails: { status: 'verified', date: '2023-01-01' },
+    categoryName: 'Catering',
+    description: 'Full-service catering for weddings, corporate events, private functions, and community gatherings. Fresh, locally-sourced ingredients. Menus customized to your taste and budget.',
+    rating: 4.7,
+    reviewCount: 112,
+    verified: true,
+    verifiedLevel: 'blue',
+    featured: true,
+    premium: false,
+    lat: -22.5550,
+    lng: 17.0550,
+    address: 'Windhoek North, Windhoek',
+    distance: 2.1,
+    isOpen: true,
+    phone: '+264 81 678 9012',
+    whatsapp: '+264816789012',
+    email: 'info@sodexo.com',
+    website: 'https://sodexo.com',
+    instagram: '@sodexo',
+    facebook: 'SodexoGlobal',
+    coverGradient: 'linear-gradient(135deg, #f97316, #ea580c, #c2410c)',
+    logoGradient: 'linear-gradient(135deg, #F97316, #EA580C)',
+    logoInitials: 'SD',
+    coverImage: 'https://upload.wikimedia.org/wikipedia/commons/4/4b/Sodexo_logo.svg',
+    logoImage: 'https://upload.wikimedia.org/wikipedia/commons/4/4b/Sodexo_logo.svg',
+    galleryColors: ['#f97316', '#ea580c', '#c2410c', '#fb923c', '#fdba74', '#fed7aa'],
+    hours: {
+      monday: '07:00 - 19:00',
+      tuesday: '07:00 - 19:00',
+      wednesday: '07:00 - 19:00',
+      thursday: '07:00 - 19:00',
+      friday: '07:00 - 20:00',
+      saturday: '08:00 - 18:00',
+      sunday: '09:00 - 15:00',
+    },
+    services: [
+      { name: 'Wedding Catering', description: 'Complete wedding catering with setup, staff, and cleanup. Customized menus.', price: 'From N$180/person', color: '#f97316' },
+      { name: 'Corporate Catering', description: 'Lunch boxes, buffets, and plated meals for corporate events', price: 'From N$120/person', color: '#ea580c' },
+      { name: 'Braai Catering', description: 'Authentic Namibian braai experience with all the trimmings', price: 'From N$150/person', color: '#c2410c' },
+      { name: 'Private Chef', description: 'Personal chef service for intimate dinner parties and special occasions', price: 'From N$3,000', color: '#fb923c' },
+    ],
+    reviews: [
+      { author: 'Wilma K.', avatar: 'WK', avatarColor: '#F97316', rating: 5, date: '5 days ago', text: 'Fresh Catering did an incredible job at our wedding. 250 guests and not a single complaint about the food! The potjie was a hit!' },
+      { author: 'Jason B.', avatar: 'JB', avatarColor: '#3B82F6', rating: 4, date: '3 weeks ago', text: 'Used them for our company year-end. Good food and professional service. Portions were generous.' },
+    ],
+  },
+  {
+    id: 'style-studio',
+    name: 'Style Studio',
+    category: 'beauty',
+    status: 'active',
+    createdAt: '2023-01-01T00:00:00Z',
+    updatedAt: '2023-01-01T00:00:00Z',
+    verificationDetails: { status: 'verified', date: '2023-01-01' },
+    categoryName: 'Hair Salon',
+    description: 'Contemporary hair salon offering cuts, styling, coloring, braiding, and hair treatments for all hair types. Walk-ins welcome. Located in the heart of Windhoek.',
+    rating: 4.6,
+    reviewCount: 178,
+    verified: true,
+    verifiedLevel: 'blue',
+    featured: false,
+    premium: false,
+    lat: -22.5700,
+    lng: 17.0700,
+    address: 'Independence Avenue, Windhoek',
+    distance: 0.5,
+    isOpen: true,
+    phone: '+264 81 789 0123',
+    whatsapp: '+264817890123',
+    email: 'hello@stylestudio.na',
+    website: null,
+    instagram: '@stylestudio_whk',
+    facebook: 'StyleStudioWindhoek',
+    coverGradient: 'linear-gradient(135deg, #8b5cf6, #7c3aed, #6d28d9)',
+    logoGradient: 'linear-gradient(135deg, #8B5CF6, #7C3AED)',
+    logoInitials: 'SS',
+    galleryColors: ['#8b5cf6', '#7c3aed', '#6d28d9', '#a78bfa', '#c4b5fd', '#ddd6fe'],
+    hours: {
+      monday: '08:00 - 18:00',
+      tuesday: '08:00 - 18:00',
+      wednesday: '08:00 - 18:00',
+      thursday: '08:00 - 19:00',
+      friday: '08:00 - 19:00',
+      saturday: '08:00 - 16:00',
+      sunday: 'Closed',
+    },
+    services: [
+      { name: 'Haircut & Styling', description: 'Professional cut and blow-dry for all hair types', price: 'From N$250', color: '#8b5cf6' },
+      { name: 'Braiding', description: 'Box braids, cornrows, twists, and protective styles', price: 'From N$400', color: '#7c3aed' },
+      { name: 'Coloring', description: 'Full color, highlights, balayage, and creative coloring', price: 'From N$500', color: '#6d28d9' },
+      { name: 'Hair Treatment', description: 'Deep conditioning, keratin treatment, and scalp therapy', price: 'From N$350', color: '#a78bfa' },
+    ],
+    reviews: [
+      { author: 'Selma N.', avatar: 'SN', avatarColor: '#8B5CF6', rating: 5, date: '2 days ago', text: 'Best braids I\'ve ever had! They lasted for weeks and the style was exactly what I wanted.' },
+      { author: 'Emilia M.', avatar: 'EM', avatarColor: '#EC4899', rating: 4, date: '2 weeks ago', text: 'Nice salon, friendly staff. My color came out great. A bit pricey but worth it.' },
+    ],
+  },
+  {
+    id: 'safari-lodge',
+    name: 'Dune Star Lodge',
+    category: 'accommodation',
+    status: 'active',
+    createdAt: '2023-01-01T00:00:00Z',
+    updatedAt: '2023-01-01T00:00:00Z',
+    verificationDetails: { status: 'verified', date: '2023-01-01' },
+    categoryName: 'Accommodation & Tourism',
+    description: 'Boutique desert lodge offering breathtaking views of the Namibian dunes. Luxury tented suites, stargazing decks, guided nature walks, and authentic Namibian hospitality.',
+    rating: 4.9,
+    reviewCount: 201,
+    verified: true,
+    verifiedLevel: 'gold',
+    featured: true,
+    premium: true,
+    lat: -22.6800,
+    lng: 17.0900,
+    address: 'Windhoek Outskirts',
+    distance: 18.5,
+    isOpen: true,
+    phone: '+264 61 567 890',
+    whatsapp: '+264815567890',
+    email: 'reservations@dunestarlodge.na',
+    website: 'https://dunestarlodge.na',
+    instagram: '@dunestarlodge',
+    facebook: 'DuneStarLodge',
+    coverGradient: 'linear-gradient(135deg, #d97706, #b45309, #92400e)',
+    logoGradient: 'linear-gradient(135deg, #D97706, #B45309)',
+    logoInitials: 'DS',
+    galleryColors: ['#d97706', '#b45309', '#92400e', '#f59e0b', '#fbbf24', '#fde68a'],
+    hours: {
+      monday: '06:00 - 22:00',
+      tuesday: '06:00 - 22:00',
+      wednesday: '06:00 - 22:00',
+      thursday: '06:00 - 22:00',
+      friday: '06:00 - 22:00',
+      saturday: '06:00 - 22:00',
+      sunday: '06:00 - 22:00',
+    },
+    services: [
+      { name: 'Luxury Suite', description: 'En-suite tented suite with private deck and panoramic desert views', price: 'N$3,800/night', color: '#d97706' },
+      { name: 'Guided Nature Walk', description: '2-hour guided walk exploring local flora, fauna, and geology', price: 'N$450/person', color: '#b45309' },
+      { name: 'Stargazing Experience', description: 'Evening astronomy session with telescope and expert guide', price: 'N$350/person', color: '#92400e' },
+      { name: 'Full Board Package', description: 'Accommodation with breakfast, lunch, and dinner included', price: 'N$5,200/night', color: '#f59e0b' },
+    ],
+    reviews: [
+      { author: 'Wolfgang B.', avatar: 'WB', avatarColor: '#D97706', rating: 5, date: '1 week ago', text: 'Absolutely magical! The sunset from our suite was unforgettable. Staff were incredibly welcoming. This is the real Namibia.' },
+      { author: 'Claire M.', avatar: 'CM', avatarColor: '#EC4899', rating: 5, date: '3 weeks ago', text: 'A truly unique experience. The stargazing was extraordinary — we could see the Milky Way so clearly. Worth every cent.' },
+    ],
+  },
+  {
+    id: 'sparkle-wash',
+    name: 'Sparkle Car Wash',
+    category: 'automotive',
+    status: 'active',
+    createdAt: '2023-01-01T00:00:00Z',
+    updatedAt: '2023-01-01T00:00:00Z',
+    verificationDetails: { status: 'verified', date: '2023-01-01' },
+    categoryName: 'Car Wash',
+    description: 'Professional hand car wash and detailing service. Quick wash, full valet, interior cleaning, and paint protection. While-you-wait service with free WiFi.',
+    rating: 4.3,
+    reviewCount: 312,
+    verified: false,
+    verifiedLevel: null,
+    featured: false,
+    premium: false,
+    lat: -22.5650,
+    lng: 17.0600,
+    address: 'Sam Nujoma Drive, Windhoek',
+    distance: 0.9,
+    isOpen: true,
+    phone: '+264 81 890 1234',
+    whatsapp: '+264818901234',
+    email: null,
+    website: null,
+    instagram: '@sparklewash_whk',
+    facebook: null,
+    coverGradient: 'linear-gradient(135deg, #3b82f6, #2563eb, #1d4ed8)',
+    logoGradient: 'linear-gradient(135deg, #3B82F6, #2563EB)',
+    logoInitials: 'SW',
+    galleryColors: ['#3b82f6', '#2563eb', '#1d4ed8', '#60a5fa', '#93c5fd', '#bfdbfe'],
+    hours: {
+      monday: '07:00 - 18:00',
+      tuesday: '07:00 - 18:00',
+      wednesday: '07:00 - 18:00',
+      thursday: '07:00 - 18:00',
+      friday: '07:00 - 18:00',
+      saturday: '07:00 - 17:00',
+      sunday: '08:00 - 14:00',
+    },
+    services: [
+      { name: 'Quick Wash', description: 'Exterior hand wash and dry', price: 'N$80', color: '#3b82f6' },
+      { name: 'Full Valet', description: 'Complete interior and exterior cleaning, dashboard treatment', price: 'N$250', color: '#2563eb' },
+      { name: 'Interior Deep Clean', description: 'Seats, carpets, and upholstery deep cleaning', price: 'N$350', color: '#1d4ed8' },
+      { name: 'Paint Protection', description: 'Professional wax and paint sealant application', price: 'N$500', color: '#60a5fa' },
+    ],
+    reviews: [
+      { author: 'Daniel N.', avatar: 'DN', avatarColor: '#3B82F6', rating: 4, date: '2 days ago', text: 'Quick and efficient. My bakkie looks brand new. Fair prices too.' },
+    ],
+  },
+  {
+    id: 'namprint',
+    name: 'NamPrint Design',
+    category: 'business',
+    status: 'active',
+    createdAt: '2023-01-01T00:00:00Z',
+    updatedAt: '2023-01-01T00:00:00Z',
+    verificationDetails: { status: 'verified', date: '2023-01-01' },
+    categoryName: 'Graphic Design & Printing',
+    description: 'Full-service graphic design and printing company. Business cards, flyers, banners, branding packages, vehicle wraps, and large format printing.',
+    rating: 4.4,
+    reviewCount: 56,
+    verified: true,
+    verifiedLevel: 'blue',
+    featured: false,
+    premium: false,
+    lat: -22.5720,
+    lng: 17.0580,
+    address: 'Northern Industrial, Windhoek',
+    distance: 3.1,
+    isOpen: false,
+    phone: '+264 61 678 901',
+    whatsapp: '+264816678901',
+    email: 'design@namprint.na',
+    website: 'https://namprint.na',
+    instagram: '@namprint_na',
+    facebook: 'NamPrintDesign',
+    coverGradient: 'linear-gradient(135deg, #6366f1, #4f46e5, #4338ca)',
+    logoGradient: 'linear-gradient(135deg, #6366F1, #4F46E5)',
+    logoInitials: 'NP',
+    galleryColors: ['#6366f1', '#4f46e5', '#4338ca', '#818cf8', '#a5b4fc', '#c7d2fe'],
+    hours: {
+      monday: '08:00 - 17:00',
+      tuesday: '08:00 - 17:00',
+      wednesday: '08:00 - 17:00',
+      thursday: '08:00 - 17:00',
+      friday: '08:00 - 16:00',
+      saturday: 'Closed',
+      sunday: 'Closed',
+    },
+    services: [
+      { name: 'Brand Identity', description: 'Logo design, brand guidelines, business cards, and stationery', price: 'From N$4,000', color: '#6366f1' },
+      { name: 'Print Materials', description: 'Flyers, brochures, posters, and banners', price: 'From N$500', color: '#4f46e5' },
+      { name: 'Vehicle Wraps', description: 'Full and partial vehicle branding and wraps', price: 'From N$6,000', color: '#4338ca' },
+      { name: 'Large Format', description: 'Pull-up banners, wall graphics, and signage', price: 'From N$800', color: '#818cf8' },
+    ],
+    reviews: [
+      { author: 'Monica W.', avatar: 'MW', avatarColor: '#6366F1', rating: 5, date: '1 month ago', text: 'Excellent branding work! They designed our entire brand identity and it looks professional and modern.' },
+    ],
+  },
+];
+
+// Search suggestions
+export const SEARCH_SUGGESTIONS = [
+  { text: 'Photographer in Windhoek', category: 'Photography' },
+  { text: 'Wedding cake maker', category: 'Food' },
+  { text: 'Mechanic near me', category: 'Automotive' },
+  { text: 'Wedding DJ', category: 'Events' },
+  { text: 'Makeup artist', category: 'Beauty' },
+  { text: 'Plumber', category: 'Home Services' },
+  { text: 'Web developer', category: 'Technology' },
+  { text: 'Car wash', category: 'Automotive' },
+  { text: 'Catering service', category: 'Food' },
+  { text: 'Hair salon', category: 'Beauty' },
+];
+
+// Trending searches
+export const TRENDING_SEARCHES = [
+  'Wedding photographer',
+  'Birthday cake',
+  'Car service',
+  'Braai catering',
+  'Nail artist',
+  'DJ for party',
+];
+
+// Search placeholder rotation
+export const SEARCH_PLACEHOLDERS = [
+  'Find a Photographer...',
+  'Find a Mechanic...',
+  'Find a Cake Maker...',
+  'Find a Wedding DJ...',
+  'Find a Plumber...',
+  'Find a Hair Stylist...',
+];
+
+// Helper: get time greeting
+export function getGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good Morning';
+  if (hour < 17) return 'Good Afternoon';
+  return 'Good Evening';
+}
+
+// Helper: get featured vendors
+export async function getFeaturedVendors() {
+  let vendors = await store.getApprovedVendors();
+  if (!vendors || vendors.length === 0) vendors = VENDORS;
+  return vendors.filter(v => v.featured);
+}
+
+// Helper: get trending vendors (highest review count)
+export async function getTrendingVendors() {
+  let vendors = await store.getApprovedVendors();
+  if (!vendors || vendors.length === 0) vendors = VENDORS;
+  return vendors.sort((a, b) => (b.reviewCount || 0) - (a.reviewCount || 0)).slice(0, 6);
+}
+
+// Helper: get new vendors (we'll simulate with last few)
+export async function getNewVendors() {
+  let vendors = await store.getApprovedVendors();
+  if (!vendors || vendors.length === 0) vendors = VENDORS;
+  return vendors.slice(-4);
+}
+
+// Helper: get nearby vendors (sorted by distance)
+export async function getNearbyVendors(radius = 5) {
+  let vendors = await store.getApprovedVendors();
+  if (!vendors || vendors.length === 0) vendors = VENDORS;
+  return vendors.filter(v => (v.distance || 0) <= radius).sort((a, b) => (a.distance || 0) - (b.distance || 0));
+}
+
+// Helper: search vendors
+export async function searchVendors(query) {
+  let vendors = await store.getAllVendors({ search: query, status: 'approved' });
+  if (!vendors || vendors.length === 0) {
+    const q = query.toLowerCase();
+    vendors = VENDORS.filter(v => v.name.toLowerCase().includes(q) || v.category.includes(q));
+  }
+  return vendors;
+}
+
+// Helper: get vendor by ID
+export async function getVendorById(id) {
+  let vendor = await store.getVendor(id);
+  if (!vendor) vendor = VENDORS.find(v => v.id === id);
+  return vendor;
+}
+
+// Helper: get vendors by category
+export async function getVendorsByCategory(categoryId) {
+  let vendors = await store.getVendorsByCategory(categoryId);
+  if (!vendors || vendors.length === 0) {
+    vendors = VENDORS.filter(v => v.category === categoryId);
+  }
+  return vendors;
+}
+
+// Get all vendors including approved seeded ones
+export async function getAllVendorsIncludingSeeded() {
+  let vendors = await store.getApprovedVendors();
+  if (!vendors || vendors.length === 0) vendors = VENDORS;
+  return vendors;
+}
+
+// Category lookup map for quick access
+export const CATEGORY_MAP = {};
+CATEGORIES.forEach(c => { CATEGORY_MAP[c.id] = c; });
