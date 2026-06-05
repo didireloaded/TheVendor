@@ -3,6 +3,8 @@
 // ============================================
 
 import { supabase } from '../../lib/supabase.js';
+import { escapeHtml } from '../../lib/sanitize.js';
+import { refreshIcons } from '../../app.js';
 
 export async function renderDashboardLeads(container) {
   container.innerHTML = `
@@ -15,10 +17,7 @@ export async function renderDashboardLeads(container) {
     </div>
   `;
 
-  // Hydrate Lucide icons for loader
-  import('../../app.js').then(module => {
-    if (module.refreshIcons) module.refreshIcons();
-  });
+  refreshIcons();
 
   // Fetch live leads
   const { data: leadsData, error } = await supabase
@@ -56,18 +55,17 @@ export async function renderDashboardLeads(container) {
     </div>
   `;
 
-  // Hydrate Lucide icons
-  import('../../app.js').then(module => {
-    if (module.refreshIcons) module.refreshIcons();
-  });
+  refreshIcons();
 }
 
 function renderLeadCard(lead) {
+  const status = String(lead.status || 'new').toLowerCase();
   let statusClass = 'status-new';
-  if (lead.status === 'Contacted') statusClass = 'status-contacted';
-  if (lead.status === 'Quoted') statusClass = 'status-quoted';
-  if (lead.status === 'Booked') statusClass = 'status-booked';
-  if (lead.status === 'Completed') statusClass = 'status-completed';
+  if (status === 'contacted') statusClass = 'status-contacted';
+  if (status === 'quoted') statusClass = 'status-quoted';
+  if (status === 'booked') statusClass = 'status-booked';
+  if (status === 'completed') statusClass = 'status-completed';
+  const statusLabel = status.charAt(0).toUpperCase() + status.slice(1);
 
   const isHighQuality = lead.quality === 'High' ? 'high-quality' : '';
 
@@ -75,30 +73,18 @@ function renderLeadCard(lead) {
     <div class="lead-card ${isHighQuality}">
       <div class="lead-header">
         <div>
-          <div class="lead-customer">${lead.customer_name}</div>
-          <div class="data-sub">${lead.customer_contact} · ${new Date(lead.created_at).toLocaleDateString()}</div>
+          <div class="lead-customer">${escapeHtml(lead.customer_name)}</div>
+          <div class="data-sub">${escapeHtml(lead.customer_phone || lead.customer_email || 'No contact')} · ${new Date(lead.created_at).toLocaleDateString()}</div>
         </div>
         <div class="lead-badge ${statusClass}">
-          ${lead.status}
+          ${escapeHtml(statusLabel)}
         </div>
       </div>
       
       <div class="lead-details">
-        <div class="lead-detail-item">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-          ${lead.service_requested || 'General Request'}
-        </div>
-        <div class="lead-detail-item">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-          ${lead.location || 'Not specified'}
-        </div>
-        <div class="lead-detail-item">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-          <span style="color: var(--green-600); font-weight: 600;">${lead.budget || 'Not specified'}</span>
-        </div>
-        ${lead.message ? `
+        ${lead.details ? `
         <div class="lead-detail-item" style="margin-top: 8px; font-style: italic; color: var(--text-secondary);">
-          "${lead.message}"
+          "${escapeHtml(lead.details)}"
         </div>
         ` : ''}
       </div>

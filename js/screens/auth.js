@@ -4,8 +4,11 @@
 // ============================================
 
 import { refreshIcons } from '../app.js';
+import { supabase } from '../lib/supabase.js';
+import { escapeHtml } from '../lib/sanitize.js';
 
 let currentView = 'signin'; // 'signin' | 'signup' | 'otp'
+let currentAuthEmail = '';
 let otpTimer = null;
 
 export function renderAuthScreen(containerEl) {
@@ -46,10 +49,10 @@ function renderSignIn(container) {
 
       <div class="auth-form">
         <div class="form-group">
-          <label class="form-label">Email or Phone</label>
+          <label class="form-label">Email</label>
           <div class="auth-input-wrap">
             <i data-lucide="mail"></i>
-            <input class="form-input auth-input" type="text" id="auth-email" placeholder="name@example.com" />
+            <input class="form-input auth-input" type="email" id="auth-email" placeholder="name@example.com" />
           </div>
         </div>
 
@@ -61,6 +64,8 @@ function renderSignIn(container) {
           </div>
           <button class="auth-forgot-link">Forgot password?</button>
         </div>
+
+        <div id="auth-error-msg" style="color: #EF4444; font-size: 14px; margin-top: -10px; margin-bottom: 10px; display: none;"></div>
 
         <button class="btn btn-primary btn-full auth-submit-btn" id="auth-signin-btn">
           Sign In
@@ -75,10 +80,6 @@ function renderSignIn(container) {
             <svg viewBox="0 0 24 24" width="20" height="20"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
             Google
           </button>
-          <button class="auth-social-btn">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="#1877F2"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-            Facebook
-          </button>
         </div>
       </div>
 
@@ -90,13 +91,35 @@ function renderSignIn(container) {
   `;
 
   // Sign in
-  document.getElementById('auth-signin-btn')?.addEventListener('click', () => {
+  document.getElementById('auth-signin-btn')?.addEventListener('click', async () => {
     const email = document.getElementById('auth-email')?.value;
-    if (!email) {
-      shakeInput('auth-email');
+    const password = document.getElementById('auth-password')?.value;
+    const errorMsg = document.getElementById('auth-error-msg');
+    
+    if (!email || !password) {
+      if (!email) shakeInput('auth-email');
+      if (!password) shakeInput('auth-password');
       return;
     }
-    completeAuth(container);
+
+    const btn = document.getElementById('auth-signin-btn');
+    btn.textContent = 'Signing in...';
+    btn.disabled = true;
+    errorMsg.style.display = 'none';
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      errorMsg.textContent = error.message;
+      errorMsg.style.display = 'block';
+      btn.textContent = 'Sign In';
+      btn.disabled = false;
+    } else {
+      completeAuth(container);
+    }
   });
 
   // Go to signup
@@ -106,13 +129,24 @@ function renderSignIn(container) {
   });
 
   // Skip
-  document.getElementById('auth-skip')?.addEventListener('click', () => {
+  document.getElementById('auth-skip')?.addEventListener('click', async () => {
+    // Optionally signInAnonymously if enabled in Supabase
+    const { error } = await supabase.auth.signInAnonymously();
+    if (error) {
+      console.warn("Anonymous sign-in failed, proceeding as unauthenticated local guest:", error);
+      completeAuth(container, { guest: true });
+      return;
+    }
     completeAuth(container);
   });
 
   // Google
-  document.getElementById('auth-google-btn')?.addEventListener('click', () => {
-    completeAuth(container);
+  document.getElementById('auth-google-btn')?.addEventListener('click', async () => {
+    const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
+    if (error) {
+      console.error(error);
+      alert('Google Sign-In failed');
+    }
   });
 }
 
@@ -155,20 +189,14 @@ function renderSignUp(container) {
         </div>
 
         <div class="form-group">
-          <label class="form-label">Phone Number</label>
-          <div class="auth-input-wrap">
-            <span class="auth-phone-prefix">+264</span>
-            <input class="form-input auth-input auth-phone-input" type="tel" id="auth-phone" placeholder="81 234 5678" />
-          </div>
-        </div>
-
-        <div class="form-group">
           <label class="form-label">Password</label>
           <div class="auth-input-wrap">
             <i data-lucide="lock"></i>
             <input class="form-input auth-input" type="password" id="auth-signup-password" placeholder="Min. 8 characters" />
           </div>
         </div>
+
+        <div id="auth-error-msg" style="color: #EF4444; font-size: 14px; margin-top: -10px; margin-bottom: 10px; display: none;"></div>
 
         <label class="auth-checkbox">
           <input type="checkbox" id="auth-terms" />
@@ -186,16 +214,44 @@ function renderSignUp(container) {
     </div>
   `;
 
-  document.getElementById('auth-signup-btn')?.addEventListener('click', () => {
+  document.getElementById('auth-signup-btn')?.addEventListener('click', async () => {
     const name = document.getElementById('auth-name')?.value;
     const email = document.getElementById('auth-signup-email')?.value;
-    if (!name || !email) {
+    const password = document.getElementById('auth-signup-password')?.value;
+    const errorMsg = document.getElementById('auth-error-msg');
+
+    if (!name || !email || !password) {
       if (!name) shakeInput('auth-name');
       if (!email) shakeInput('auth-signup-email');
+      if (!password) shakeInput('auth-signup-password');
       return;
     }
-    currentView = 'otp';
-    renderAuthScreen(container);
+
+    const btn = document.getElementById('auth-signup-btn');
+    btn.textContent = 'Creating account...';
+    btn.disabled = true;
+    errorMsg.style.display = 'none';
+
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: name
+        }
+      }
+    });
+
+    if (error) {
+      errorMsg.textContent = error.message;
+      errorMsg.style.display = 'block';
+      btn.textContent = 'Create Account';
+      btn.disabled = false;
+    } else {
+      currentAuthEmail = email;
+      currentView = 'otp';
+      renderAuthScreen(container);
+    }
   });
 
   document.getElementById('auth-go-signin')?.addEventListener('click', () => {
@@ -211,8 +267,8 @@ function renderOTP(container) {
         <div class="auth-logo">
           <i data-lucide="shield-check" style="width: 48px; height: 48px; color: var(--primary-500);"></i>
         </div>
-        <h1 class="auth-title">Verify Your Phone</h1>
-        <p class="auth-subtitle">We sent a 6-digit code to +264 81 *** **78</p>
+        <h1 class="auth-title">Verify Your Email</h1>
+        <p class="auth-subtitle">We sent a 6-digit code to ${escapeHtml(currentAuthEmail || 'your email')}</p>
       </div>
 
       <div class="auth-form">
@@ -221,6 +277,8 @@ function renderOTP(container) {
             <input class="otp-input" type="text" maxlength="1" inputmode="numeric" data-otp-index="${i}" />
           `).join('')}
         </div>
+        
+        <div id="auth-error-msg" style="color: #EF4444; font-size: 14px; margin-top: 10px; margin-bottom: 10px; text-align: center; display: none;"></div>
 
         <div class="otp-timer" id="otp-timer">Resend code in <strong>00:30</strong></div>
 
@@ -270,12 +328,52 @@ function renderOTP(container) {
   }, 1000);
 
   // Verify
-  document.getElementById('auth-verify-btn')?.addEventListener('click', () => {
-    completeAuth(container);
+  document.getElementById('auth-verify-btn')?.addEventListener('click', async () => {
+    const otp = Array.from(inputs).map(inp => inp.value).join('');
+    const errorMsg = document.getElementById('auth-error-msg');
+    const btn = document.getElementById('auth-verify-btn');
+    
+    if (otp.length < 6) {
+      const group = document.getElementById('otp-group');
+      if (group) {
+        group.classList.add('shake');
+        setTimeout(() => group.classList.remove('shake'), 500);
+      }
+      return;
+    }
+
+    btn.textContent = 'Verifying...';
+    btn.disabled = true;
+    errorMsg.style.display = 'none';
+
+    const { data, error } = await supabase.auth.verifyOtp({
+      email: currentAuthEmail,
+      token: otp,
+      type: 'signup'
+    });
+
+    if (error) {
+      errorMsg.textContent = error.message;
+      errorMsg.style.display = 'block';
+      btn.textContent = 'Verify & Continue';
+      btn.disabled = false;
+    } else {
+      completeAuth(container);
+    }
   });
 
   // Resend
-  document.getElementById('auth-resend')?.addEventListener('click', () => {
+  document.getElementById('auth-resend')?.addEventListener('click', async () => {
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email: currentAuthEmail,
+    });
+    
+    if (error) {
+       alert(error.message);
+       return;
+    }
+
     seconds = 30;
     if (timerEl) {
       timerEl.classList.remove('hidden');
@@ -301,25 +399,30 @@ function renderOTP(container) {
   });
 }
 
-function completeAuth(container) {
+function completeAuth(container, detail = {}) {
   clearInterval(otpTimer);
   currentView = 'signin';
-  localStorage.setItem('tv_authenticated', 'true');
-  localStorage.setItem('tv_user', JSON.stringify({ name: 'John Doe', email: 'john@thevendor.na', phone: '+264 81 234 5678' }));
+  
+  // Clean up old fake auth
+  localStorage.removeItem('tv_user');
+  localStorage.removeItem('tv_authenticated');
 
   // Transition out
-  const screen = container.closest('#auth-screen') || container;
-  screen.style.opacity = '0';
-  screen.style.transition = 'opacity 0.4s ease';
+  const screen = container.closest('.auth-screen') || container;
+  if(screen.style) {
+    screen.style.opacity = '0';
+    screen.style.transition = 'opacity 0.4s ease';
+  }
 
   setTimeout(() => {
-    screen.classList.add('hidden');
-    screen.style.opacity = '';
+    if(screen.classList) {
+        screen.classList.add('hidden');
+        screen.style.opacity = '';
+    }
     const app = document.getElementById('app');
     if (app) {
-      app.classList.remove('hidden');
       // Trigger app init
-      window.dispatchEvent(new CustomEvent('authComplete'));
+      window.dispatchEvent(new CustomEvent('authComplete', { detail }));
     }
   }, 400);
 }

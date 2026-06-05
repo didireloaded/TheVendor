@@ -6,7 +6,7 @@
 .dashboard-app {
   position: fixed;
   inset: 0;
-  background: #F8FAFC; /* Light neutral background for dashboard */
+  background: transparent;
   z-index: 2000;
   display: flex;
   flex-direction: column;
@@ -20,8 +20,10 @@
 /* ---------- Header ---------- */
 .dash-header {
   height: 60px;
-  background: white;
-  border-bottom: 1px solid var(--border-light);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-bottom: var(--glass-border);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -128,20 +130,24 @@
   overflow-y: auto;
   overflow-x: hidden;
   padding: var(--space-4);
-  padding-bottom: calc(var(--nav-height) + var(--safe-bottom) + var(--space-4));
+  padding-bottom: calc(var(--nav-height) + var(--safe-bottom) + var(--space-8));
 }
 
 /* ---------- Bottom Navigation ---------- */
 .dash-bottom-nav {
   position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: calc(var(--nav-height) + var(--safe-bottom));
-  background: white;
-  border-top: 1px solid var(--border-light);
+  bottom: calc(var(--space-4) + var(--safe-bottom));
+  left: var(--space-4);
+  right: var(--space-4);
+  height: var(--nav-height);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: var(--radius-full);
   display: flex;
-  padding-bottom: var(--safe-bottom);
+  padding: 0 var(--space-2);
   z-index: 1000;
 }
 
@@ -175,12 +181,14 @@
 
 /* ---------- Dashboard Cards (SellBoard Style) ---------- */
 .dash-card {
-  background: white;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
   border-radius: var(--radius-xl);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03), 0 1px 3px rgba(0, 0, 0, 0.02);
+  box-shadow: var(--glass-shadow);
   padding: var(--space-5);
   margin-bottom: var(--space-4);
-  border: 1px solid rgba(0,0,0,0.02);
+  border: var(--glass-border);
 }
 
 .dash-card-header {
@@ -303,11 +311,13 @@
 }
 
 .metric-card {
-  background: white;
-  border-radius: var(--radius-lg);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-radius: var(--radius-xl);
   padding: var(--space-4);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
-  border: 1px solid var(--border-light);
+  box-shadow: var(--glass-shadow);
+  border: var(--glass-border);
   display: flex;
   flex-direction: column;
 }
@@ -472,11 +482,13 @@
 
 /* ---------- Leads Center ---------- */
 .lead-card {
-  background: white;
-  border-radius: var(--radius-lg);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-radius: var(--radius-xl);
   padding: var(--space-4);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-  border: 1px solid var(--border-light);
+  box-shadow: var(--glass-shadow);
+  border: var(--glass-border);
   margin-bottom: var(--space-3);
   display: flex;
   flex-direction: column;

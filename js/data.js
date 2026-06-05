@@ -8,40 +8,66 @@ import { supabase } from './lib/supabase.js';
 export let CATEGORIES = [];
 export let VENDORS = [];
 
-try {
-  const [categoriesRes, vendorsRes] = await Promise.all([
-    supabase.from('categories').select('*'),
-    supabase.from('vendors').select('*, services(*), reviews(*)')
-  ]);
+export async function initData() {
+  try {
+    const [categoriesRes, vendorsRes] = await Promise.all([
+      supabase.from('categories').select('*'),
+      supabase.from('vendors').select('*, services(*), reviews(*)')
+    ]);
 
-  if (categoriesRes.data) {
-    CATEGORIES = categoriesRes.data;
+    if (categoriesRes.data) {
+      CATEGORIES = categoriesRes.data;
+    }
+    
+    if (vendorsRes.data) {
+      VENDORS = vendorsRes.data
+        .filter(v => v.status === 'approved') // Only show approved vendors
+        .map(normalizeVendor);
+    }
+  } catch (e) {
+    console.error("Error fetching data from Supabase:", e);
   }
-  
-  if (vendorsRes.data) {
-    VENDORS = vendorsRes.data
-      .filter(v => v.verified === true)
-      .map(v => ({
-      ...v,
-      categoryName: v.category_name,
-      reviewCount: v.review_count,
-      verifiedLevel: v.verified_level,
-      isOpen: v.is_open,
-      coverGradient: v.cover_gradient,
-      logoGradient: v.logo_gradient,
-      logoInitials: v.logo_initials,
-      galleryColors: v.gallery_colors,
-      services: v.services || [],
-      reviews: v.reviews ? v.reviews.map(r => ({
-        ...r,
-        avatarColor: r.avatar_color,
-        hasPhotos: r.has_photos,
-        photoColors: r.photo_colors
-      })) : []
-    }));
-  }
-} catch (e) {
-  console.error("Error fetching data from Supabase:", e);
+}
+
+function normalizeVendor(v) {
+  const name = v.businessName || v.name || 'Unnamed Vendor';
+  const categoryName = CATEGORIES.find(c => c.id === v.category)?.name || v.category || 'General';
+  const latitude = Number(v.latitude ?? v.lat);
+  const longitude = Number(v.longitude ?? v.lng);
+  const reviewCount = Number(v.reviewCount ?? v.review_count ?? 0);
+  const rating = Number(v.rating ?? 0);
+  const logoInitials = v.logoInitials || name.split(/\s+/).map(w => w[0]).join('').substring(0, 2).toUpperCase();
+
+  return {
+    ...v,
+    name,
+    businessName: name,
+    categoryName,
+    reviewCount,
+    rating,
+    verifiedLevel: v.verifiedLevel || 'pro',
+    verified: v.verificationStatus === 'verified' || v.verified === true,
+    featured: Boolean(v.featured) || rating >= 4.7,
+    isOpen: v.isOpen ?? v.is_open ?? true,
+    distance: Number(v.distance ?? (Math.random() * 15 + 1).toFixed(1)),
+    latitude: Number.isFinite(latitude) ? latitude : null,
+    longitude: Number.isFinite(longitude) ? longitude : null,
+    lat: Number.isFinite(latitude) ? latitude : null,
+    lng: Number.isFinite(longitude) ? longitude : null,
+    coverGradient: v.coverGradient || v.cover_gradient || 'linear-gradient(135deg, #1A6FEF, #0F2B4C)',
+    logoGradient: v.logoGradient || v.logo_gradient || 'linear-gradient(135deg, #1A6FEF, #0F2B4C)',
+    logoInitials,
+    galleryColors: v.galleryColors || v.gallery_colors || [],
+    hours: v.hours || {},
+    services: Array.isArray(v.services) ? v.services : [],
+    reviews: Array.isArray(v.reviews) ? v.reviews.map(r => ({
+      ...r,
+      avatar: r.avatar || r.author?.[0] || '?',
+      avatarColor: r.avatarColor || r.avatar_color || '#1A6FEF',
+      hasPhotos: r.hasPhotos ?? r.has_photos ?? false,
+      photoColors: r.photoColors || r.photo_colors || []
+    })) : []
+  };
 }
 
 // Search suggestions
@@ -88,7 +114,8 @@ export function getGreeting() {
 
 // Helper: get featured vendors
 export function getFeaturedVendors() {
-  return VENDORS.filter(v => v.featured);
+  const featured = VENDORS.filter(v => v.featured);
+  return featured.length ? featured : [...VENDORS].sort((a, b) => b.rating - a.rating).slice(0, 8);
 }
 
 // Helper: get trending vendors (highest review count)
@@ -110,10 +137,10 @@ export function getNearbyVendors(radius = 5) {
 export function searchVendors(query) {
   const q = query.toLowerCase();
   return VENDORS.filter(v =>
-    v.name.toLowerCase().includes(q) ||
-    v.categoryName.toLowerCase().includes(q) ||
-    v.description.toLowerCase().includes(q) ||
-    v.services.some(s => s.name.toLowerCase().includes(q))
+    (v.name || '').toLowerCase().includes(q) ||
+    (v.categoryName || '').toLowerCase().includes(q) ||
+    (v.description || '').toLowerCase().includes(q) ||
+    v.services.some(s => (s.name || '').toLowerCase().includes(q))
   );
 }
 
@@ -125,4 +152,70 @@ export function getVendorById(id) {
 // Helper: get vendors by category
 export function getVendorsByCategory(categoryId) {
   return VENDORS.filter(v => v.category === categoryId);
+}
+
+// ============================================
+// CONTENT GENERATION (For Instagram/Pinterest Explore)
+
+// ============================================
+// CONTENT GENERATION (For Instagram/Pinterest Explore)
+// ============================================
+
+export let EXPLORE_POSTS = [];
+export let EXPLORE_STORIES = [];
+export let EXPLORE_REELS = [];
+
+// Call this after VENDORS are loaded to generate the content feeds
+export async function initExploreContent() {
+  if (!VENDORS || VENDORS.length === 0) return;
+  
+  try {
+    const [postsRes, storiesRes, reelsRes] = await Promise.all([
+      supabase.from('posts').select('*, vendors("businessName", "logoInitials", "logoGradient")'),
+      supabase.from('stories').select('*, vendors("businessName", "logoInitials", "logoGradient")'),
+      supabase.from('reels').select('*, vendors("businessName", "logoInitials", "logoGradient")')
+    ]);
+
+    if (postsRes.data) {
+      EXPLORE_POSTS = postsRes.data.map(p => ({
+        id: p.id,
+        vendorId: p.vendorId,
+        vendorName: p.vendors?.businessName || 'Vendor',
+        vendorLogo: p.vendors?.logoInitials || 'V',
+        vendorColor: p.vendors?.logoGradient || 'var(--primary-500)',
+        imageGradient: p.imageGradient,
+        height: p.height || 250,
+        caption: p.caption,
+        likes: p.likes,
+        views: p.views
+      }));
+    }
+
+    if (storiesRes.data) {
+      EXPLORE_STORIES = storiesRes.data.map(s => ({
+        id: s.id,
+        vendorId: s.vendorId,
+        vendorName: s.vendors?.businessName || 'Vendor',
+        vendorLogo: s.vendors?.logoInitials || 'V',
+        vendorColor: s.vendors?.logoGradient || 'var(--primary-500)',
+        hasUnseen: s.hasUnseen
+      }));
+    }
+
+    if (reelsRes.data) {
+      EXPLORE_REELS = reelsRes.data.map(r => ({
+        id: r.id,
+        vendorId: r.vendorId,
+        vendorName: r.vendors?.businessName || 'Vendor',
+        vendorLogo: r.vendors?.logoInitials || 'V',
+        coverGradient: r.coverGradient,
+        views: r.views
+      }));
+    }
+
+    // Shuffle posts
+    EXPLORE_POSTS.sort(() => 0.5 - Math.random());
+  } catch (err) {
+    console.error('Error fetching explore content:', err);
+  }
 }

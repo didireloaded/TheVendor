@@ -6,7 +6,7 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: var(--bg-primary);
+  background: transparent;
 }
 
 /* Header */
@@ -107,8 +107,10 @@
   left: 0;
   right: 0;
   padding: var(--space-3) var(--space-4);
-  background: var(--bg-primary);
-  border-top: 1px solid var(--border-light);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-top: var(--glass-border);
   display: flex;
   gap: var(--space-3);
   z-index: 100;

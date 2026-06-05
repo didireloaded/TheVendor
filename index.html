@@ -31,10 +31,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
 
-  <!-- Leaflet CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+  <!-- Mapbox GL JS CSS -->
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.css" rel="stylesheet" />
 
   <!-- App Styles -->
   <link rel="stylesheet" href="/styles/index.css" />
@@ -43,6 +41,7 @@
   <link rel="stylesheet" href="/styles/dashboard.css" />
   <link rel="stylesheet" href="/styles/auth.css" />
   <link rel="stylesheet" href="/styles/registration.css" />
+  <link rel="stylesheet" href="/styles/chat.css" />
 
   <!-- Chart.js -->
   <script defer src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -170,12 +169,12 @@
         <i data-lucide="map-pinned" class="nav-icon"></i>
         <span class="nav-label">Map</span>
       </button>
-      <button class="nav-item" data-screen="favorites" id="nav-favorites">
-        <i data-lucide="heart" class="nav-icon"></i>
-        <span class="nav-label">Favorites</span>
+      <button class="nav-item" data-screen="chat" id="nav-chat">
+        <i data-lucide="messages-square" class="nav-icon"></i>
+        <span class="nav-label">Chat</span>
       </button>
       <button class="nav-item" data-screen="profile" id="nav-profile">
-        <i data-lucide="user" class="nav-icon"></i>
+        <i data-lucide="user-round" class="nav-icon"></i>
         <span class="nav-label">Profile</span>
       </button>
     </nav>
@@ -189,10 +188,10 @@
     <!-- Dashboard Header (Mobile) -->
     <header class="dash-header">
       <div class="dash-header-left">
-        <div class="dash-logo">V</div>
+        <div class="dash-logo" id="dash-header-logo">...</div>
         <div class="dash-title">
-          <div class="dash-name">VisionHaus Media <i data-lucide="badge-check" class="dash-verified"></i></div>
-          <div class="dash-plan">Premium Plan</div>
+          <div class="dash-name"><span id="dash-header-name">Loading...</span> <i data-lucide="badge-check" class="dash-verified hidden" id="dash-header-verified"></i></div>
+          <div class="dash-plan" id="dash-header-plan">Vendor Account</div>
         </div>
       </div>
       <div class="dash-header-right">
@@ -235,6 +234,9 @@
   <!-- Vendor Profile Overlay -->
   <div id="vendor-profile-overlay" class="vendor-profile-overlay hidden"></div>
 
+  <!-- Active Chat Overlay -->
+  <div id="active-chat-overlay" class="active-chat-overlay hidden"></div>
+
   <!-- Bottom Sheet Overlay -->
   <div id="bottom-sheet-overlay" class="bottom-sheet-overlay hidden">
     <div class="bottom-sheet-backdrop" id="bottom-sheet-backdrop"></div>
@@ -247,9 +249,8 @@
   <!-- Toast Notifications -->
   <div id="toast-container" class="toast-container"></div>
 
-  <!-- Leaflet JS -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+  <!-- Mapbox GL JS -->
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.js"></script>
 
   <!-- App Scripts -->
   <script type="module" src="/js/app.js"></script>

@@ -1,21 +1,23 @@
 // ============================================
-// THE VENDOR — Map Screen
-// Interactive Leaflet map with vendor pins & clustering
+// THE VENDOR — Map Screen (Mapbox GL JS)
 // ============================================
 
-import { VENDORS, CATEGORIES, SEARCH_PLACEHOLDERS } from '../data.js';
-import { icons, openVendorProfileById, refreshIcons } from '../app.js';
+import { VENDORS, CATEGORIES } from '../data.js';
+import { icons, refreshIcons } from '../app.js';
+import { escapeHtml, escapeAttr, safeCssColor } from '../lib/sanitize.js';
 
 let map = null;
-let markerCluster = null;
-let currentMarkers = {}; // Store markers by vendor ID
 let activeCategory = 'all';
+let markersOnScreen = {};
 let searchPlaceholderInterval = null;
+
+// Mapbox Token (Provide via .env)
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || 'pk.eyJ1IjoiZGV2IiwiYSI6ImNsaW11YnF1bjAwYzgzZm12cHRic3M4dGkifQ.dummy_token_for_testing';
 
 export function renderMapScreen(container) {
   container.innerHTML = `
     <div class="screen-map">
-      <div class="map-container" id="leaflet-map"></div>
+      <div class="map-container" id="mapbox-map"></div>
 
       <!-- Floating Top Header -->
       <div class="map-floating-header">
@@ -26,10 +28,6 @@ export function renderMapScreen(container) {
           </div>
           <button class="map-icon-btn" id="map-filter-btn">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
-          </button>
-          <button class="map-icon-btn" id="map-notif-btn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-            <span class="notif-dot"></span>
           </button>
         </div>
 
@@ -44,7 +42,7 @@ export function renderMapScreen(container) {
 
       <!-- Map Controls -->
       <div class="map-controls">
-        <button class="map-btn map-near-btn" id="map-near-btn" title="Near Me">
+        <button class="map-btn map-near-me-btn" id="map-near-btn" title="Near Me">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
         </button>
         <button class="map-btn map-locate-btn" id="map-locate" title="My Location">
@@ -57,10 +55,6 @@ export function renderMapScreen(container) {
         ${icons.search} Search this area
       </button>
 
-      <!-- Vendor Discovery Cards Carousel -->
-      <div class="map-discovery-carousel hide-scrollbar" id="map-discovery-carousel">
-        <!-- Cards injected here -->
-      </div>
     </div>
   `;
 
@@ -70,16 +64,7 @@ export function renderMapScreen(container) {
 }
 
 function startSearchPlaceholderRotation() {
-  const placeholders = [
-    "Photographer near me",
-    "Cake maker",
-    "Mechanic",
-    "Videographer",
-    "DJ",
-    "Car wash",
-    "Graphic designer",
-    "Makeup artist"
-  ];
+  const placeholders = ["Photographer near me", "Cake maker", "Mechanic", "Videographer", "DJ"];
   const input = document.getElementById('map-search-input');
   if (!input) return;
 
@@ -93,196 +78,289 @@ function startSearchPlaceholderRotation() {
 }
 
 function initMap() {
-  // Center on Windhoek, Namibia
-  map = L.map('leaflet-map', {
-    center: [-22.5609, 17.0658],
-    zoom: 13,
-    zoomControl: false,
-    attributionControl: false,
+  mapboxgl.accessToken = MAPBOX_TOKEN;
+
+  map = new mapboxgl.Map({
+    container: 'mapbox-map',
+    style: 'mapbox://styles/mapbox/light-v11',
+    center: [17.0658, -22.5609], // Windhoek
+    zoom: 12,
+    pitch: 45,
+    attributionControl: false
   });
 
-  // CartoDB Positron tiles (clean, minimal, Google Maps-like style)
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-    maxZoom: 19,
-  }).addTo(map);
+  map.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-right');
 
-  // Initialize marker cluster group
-  markerCluster = L.markerClusterGroup({
-    showCoverageOnHover: false,
-    zoomToBoundsOnClick: true,
-    maxClusterRadius: 50,
-    iconCreateFunction: function(cluster) {
-      const count = cluster.getChildCount();
-      return L.divIcon({
-        html: `<div class="cluster-icon"><span>${count}</span></div>`,
-        className: 'custom-cluster',
-        iconSize: L.point(40, 40)
-      });
+  map.on('load', () => {
+    // Hide default POIs to reduce clutter
+    const layers = map.getStyle().layers;
+    for (const layer of layers) {
+      if (layer.id.includes('poi') || layer.id.includes('transit')) {
+        map.setLayoutProperty(layer.id, 'visibility', 'none');
+      }
     }
-  });
 
-  map.addLayer(markerCluster);
-
-  plotVendors(VENDORS);
-
-  // Show "search area" button when map is dragged
-  map.on('dragend', () => {
-    const btn = document.getElementById('map-area-btn');
-    if (btn) btn.style.transform = 'translate(-50%, 0) scale(1)';
-  });
-}
-
-function plotVendors(vendors) {
-  markerCluster.clearLayers();
-  currentMarkers = {};
-
-  const colorMap = {
-    'photography': '#1A6FEF',
-    'food': '#F97316',
-    'automotive': '#EF4444',
-    'beauty': '#A855F7',
-    'events': '#EC4899',
-    'construction': '#78716C',
-    'technology': '#06B6D4',
-    'retail': '#10B981',
-    'accommodation': '#8B5CF6',
-    'health': '#14B8A6',
-    'home': '#F59E0B',
-    'business': '#6366F1',
-  };
-
-  const markersArray = vendors.map(v => {
-    // Elegant dot pin
-    const pinColor = colorMap[v.category] || '#1A6FEF';
-    const isGold = v.verifiedLevel === 'gold';
+    // Add Heatmap layer source
+    const geojson = getVendorsGeoJSON(VENDORS);
     
-    const iconHtml = `
-      <div class="elegant-pin ${isGold ? 'is-gold' : ''}" style="background-color: ${isGold ? '#D4A853' : pinColor};">
-        <div class="pin-inner"></div>
-      </div>
-    `;
-
-    const icon = L.divIcon({
-      className: 'leaflet-custom-div-icon',
-      html: iconHtml,
-      iconSize: [20, 20],
-      iconAnchor: [10, 10],
+    map.addSource('vendors', {
+      type: 'geojson',
+      data: geojson,
+      cluster: true,
+      clusterMaxZoom: 14,
+      clusterRadius: 60
     });
 
-    const marker = L.marker([v.lat, v.lng], { icon });
-    marker.vendorId = v.id;
-
-    marker.on('click', () => {
-      highlightVendorCard(v.id);
-    });
-
-    currentMarkers[v.id] = marker;
-    return marker;
-  });
-
-  markerCluster.addLayers(markersArray);
-  renderDiscoveryCards(vendors);
-}
-
-function renderDiscoveryCards(vendors) {
-  const container = document.getElementById('map-discovery-carousel');
-  if (!container) return;
-
-  if (vendors.length === 0) {
-    container.innerHTML = '<div class="no-vendors-msg">No vendors found in this area.</div>';
-    return;
-  }
-
-  container.innerHTML = vendors.map(v => `
-    <div class="discovery-card" data-vendor-id="${v.id}">
-      <div class="card-cover" style="background: ${v.coverGradient};">
-        <button class="card-save-btn">
-           <i data-lucide="bookmark" style="width: 20px; height: 20px;"></i>
-        </button>
-      </div>
-      <div class="card-logo" style="background: ${v.coverGradient};">${v.logoInitials}</div>
-      <div class="card-content">
-        <div class="card-header">
-          <div class="card-name-row">
-            <h3 class="card-name">${v.name}</h3>
-            ${v.verified ? `<span class="badge-verified ${v.verifiedLevel}">${icons.verifiedBadge}</span>` : ''}
-          </div>
-          <div class="card-cat">${v.categoryName}</div>
-        </div>
-        <div class="card-meta">
-          <span class="meta-rating"><i data-lucide="star" style="width: 14px; height: 14px; fill: currentColor; margin-right: 4px; vertical-align: middle;"></i> ${v.rating} (${Math.floor(Math.random() * 200 + 10)})</span>
-          <span class="meta-dot">·</span>
-          <span class="meta-distance">${v.distance}km</span>
-        </div>
-        <div class="card-status ${v.isOpen ? 'status-open' : 'status-closed'}">
-          ${v.isOpen ? 'Open Now' : 'Closed'}
-          ${v.isOpen ? '<span class="status-badge responding">Responds quickly</span>' : ''}
-        </div>
-        <div class="card-actions">
-          <button class="btn-action whatsapp" onclick="event.stopPropagation()">WhatsApp</button>
-          <button class="btn-action call" onclick="event.stopPropagation()">Call</button>
-          <button class="btn-action primary" onclick="event.stopPropagation(); document.getElementById('app').dispatchEvent(new CustomEvent('openVendorProfile', { detail: { id: '${v.id}' } }))">Profile</button>
-        </div>
-      </div>
-    </div>
-  `).join('');
-
-  // Add intersection observer to highlight pins when cards scroll into view
-  const cards = container.querySelectorAll('.discovery-card');
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
-        const id = entry.target.dataset.vendorId;
-        focusMarker(id);
+    // Subtle Heatmap layer for zoomed out view
+    map.addLayer({
+      id: 'vendors-heat',
+      type: 'heatmap',
+      source: 'vendors',
+      maxzoom: 13,
+      paint: {
+        'heatmap-weight': 1,
+        'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 10, 1, 13, 3],
+        'heatmap-color': [
+          'interpolate', ['linear'], ['heatmap-density'],
+          0, 'rgba(26,111,239,0)',
+          0.2, 'rgba(26,111,239,0.2)',
+          0.4, 'rgba(168,85,247,0.4)',
+          0.6, 'rgba(236,72,153,0.6)',
+          0.8, 'rgba(249,115,22,0.8)',
+          1, 'rgba(239,68,68,1)'
+        ],
+        'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 10, 15, 13, 40],
+        'heatmap-opacity': ['interpolate', ['linear'], ['zoom'], 11, 0.6, 13, 0]
       }
     });
-  }, {
-    root: container,
-    threshold: 0.5
-  });
 
-  cards.forEach(card => observer.observe(card));
+    map.on('render', updateMarkers);
+    updateMarkers();
 
-  // Click card to open profile
-  cards.forEach(card => {
-    card.addEventListener('click', () => {
-       const id = card.dataset.vendorId;
-       document.getElementById('app').dispatchEvent(new CustomEvent('openVendorProfile', { detail: { id } }));
+    // Map drag event for "Search Area"
+    map.on('dragend', () => {
+      const btn = document.getElementById('map-area-btn');
+      if (btn) btn.style.transform = 'translate(-50%, 0) scale(1)';
     });
   });
-
-  // Render newly added Lucide icons
-  refreshIcons();
 }
 
-function highlightVendorCard(vendorId) {
-  const container = document.getElementById('map-discovery-carousel');
-  if (!container) return;
-  const card = container.querySelector(`.discovery-card[data-vendor-id="${vendorId}"]`);
-  if (card) {
-    // Scroll card into view
-    container.scrollTo({
-      left: card.offsetLeft - 16, // offset for padding
-      behavior: 'smooth'
-    });
-    focusMarker(vendorId);
+function getVendorsGeoJSON(vendorsData) {
+  return {
+    type: 'FeatureCollection',
+    features: vendorsData
+      .filter(v => Number.isFinite(Number(v.lng)) && Number.isFinite(Number(v.lat)))
+      .map(v => ({
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: [Number(v.lng), Number(v.lat)] },
+        properties: { ...v }
+      }))
+  };
+}
+
+function getCategoryColor(category) {
+  const map = {
+    'photography': '#1A6FEF', 'food': '#F97316', 'automotive': '#EF4444',
+    'beauty': '#A855F7', 'events': '#EC4899', 'construction': '#78716C',
+    'technology': '#06B6D4'
+  };
+  return map[category] || '#1A6FEF';
+}
+
+function getCategoryIcon(category) {
+  const map = {
+    'photography': 'camera', 'food': 'chef-hat', 'automotive': 'car',
+    'beauty': 'sparkles', 'events': 'music', 'construction': 'hammer',
+    'technology': 'monitor'
+  };
+  return map[category] || 'map-pin';
+}
+
+function updateMarkers() {
+  if (!map.getSource('vendors')) return;
+
+  const features = map.querySourceFeatures('vendors');
+  const newMarkers = {};
+
+  const zoom = map.getZoom();
+
+  for (const feature of features) {
+    const coords = feature.geometry.coordinates;
+    const props = feature.properties;
+    
+    // Cluster ID or Vendor ID
+    const id = props.cluster ? `cluster-${props.cluster_id}` : props.id;
+    let marker = markersOnScreen[id];
+
+    if (!marker) {
+      const el = document.createElement('div');
+      
+      if (props.cluster) {
+        // Area Cluster Card
+        el.className = 'area-cluster-card';
+        // Mock a category for the cluster based on random dominant (simplified)
+        el.innerHTML = `
+          <div class="area-cluster-title">
+            <i data-lucide="map-pin"></i> ${props.point_count} Vendors
+          </div>
+          <div class="area-cluster-count">Explore Area</div>
+        `;
+        el.addEventListener('click', () => {
+          map.flyTo({ center: coords, zoom: map.getZoom() + 2 });
+        });
+      } else {
+        // Progressive Disclosure logic for individual vendors
+        if (zoom > 14.5) {
+          // Airbnb-style Pricing / Rating Pin
+          el.className = 'price-pin';
+          el.innerHTML = `
+            ${escapeHtml((props.name || '').split(' ')[0])}
+            <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            ${escapeHtml(props.rating)}
+          `;
+        } else {
+          // Custom SVG Category Pin
+          el.className = 'elegant-pin';
+          const color = getCategoryColor(props.category);
+          el.style.backgroundColor = color;
+          el.style.borderColor = 'white';
+          el.innerHTML = `<div class="pin-inner" style="display:flex;align-items:center;justify-content:center;color:white;"><i data-lucide="${getCategoryIcon(props.category)}" style="width:10px;height:10px;"></i></div>`;
+        }
+
+        el.addEventListener('click', () => openVendorBottomSheet(props));
+      }
+
+      marker = new mapboxgl.Marker({ element: el })
+        .setLngLat(coords)
+        .addTo(map);
+
+      // Refresh lucide icons inside marker
+      if (window.lucide) window.lucide.createIcons({ root: el });
+    }
+
+    newMarkers[id] = marker;
   }
+
+  // Remove markers that are no longer visible
+  for (const id in markersOnScreen) {
+    if (!newMarkers[id]) markersOnScreen[id].remove();
+  }
+
+  markersOnScreen = newMarkers;
 }
 
-function focusMarker(vendorId) {
-  const marker = currentMarkers[vendorId];
-  if (!marker) return;
+function openVendorBottomSheet(vendor) {
+  // Center map slightly offset
+  const lat = Number(vendor.lat);
+  const lng = Number(vendor.lng);
+  if (Number.isFinite(lat) && Number.isFinite(lng)) {
+    map.flyTo({ center: [lng, lat - 0.01], zoom: 15, duration: 800 });
+  }
+
+  // Highlight marker
+  document.querySelectorAll('.price-pin, .elegant-pin').forEach(el => el.classList.remove('active-pin'));
+  const marker = markersOnScreen[vendor.id];
+  if (marker) marker.getElement().classList.add('active-pin');
+
+  const html = `
+    <div class="vendor-preview-sheet">
+      <div class="vendor-preview-header">
+        <div class="vendor-preview-cover" style="background: ${safeCssColor(vendor.coverGradient)};">
+           <div class="vendor-preview-logo" style="background: ${safeCssColor(vendor.logoGradient || vendor.coverGradient)}">${escapeHtml(vendor.logoInitials)}</div>
+        </div>
+        <div class="vendor-preview-info">
+          <div class="vendor-preview-name">
+            ${escapeHtml(vendor.name)} ${vendor.verified ? `<span style="color:var(--primary-500)">${icons.verifiedBadge}</span>` : ''}
+          </div>
+          <div class="vendor-preview-cat">${escapeHtml(vendor.categoryName)}</div>
+          <div class="vendor-preview-meta">
+            <span style="display:flex;align-items:center;gap:2px;"><svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:var(--gold-400);color:var(--gold-400)"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> ${escapeHtml(vendor.rating)}</span>
+            <span>·</span>
+            <span>${escapeHtml(vendor.distance)}km</span>
+            <span>·</span>
+            <span style="color:${vendor.isOpen ? 'var(--success-600)' : 'var(--error-500)'}">${vendor.isOpen ? 'Open Now' : 'Closed'}</span>
+          </div>
+        </div>
+      </div>
+      <div class="vendor-preview-actions">
+        <button class="btn btn-sm btn-whatsapp" data-map-action="whatsapp" style="flex:1"><i data-lucide="message-circle"></i> WhatsApp</button>
+        <button class="btn btn-sm btn-secondary" data-map-action="call" style="flex:1"><i data-lucide="phone"></i> Call</button>
+        <button class="btn btn-sm btn-primary" data-profile-vendor="${escapeAttr(vendor.id)}" style="flex:1">Profile</button>
+      </div>
+      
+      <!-- Drag handle area hint -->
+      <div style="text-align:center; color:var(--gray-400); font-size:10px; margin-top:10px; opacity:0.5;">Swipe up for details</div>
+    </div>
+  `;
+
+  // Use the main app bottom sheet logic
+  document.getElementById('app').dispatchEvent(new CustomEvent('openBottomSheet', { detail: { html, state: 'collapsed' } }));
+  const content = document.getElementById('bottom-sheet-content');
+  content?.querySelector('[data-profile-vendor]')?.addEventListener('click', (e) => {
+    document.getElementById('app').dispatchEvent(new CustomEvent('openVendorProfile', {
+      detail: { id: e.currentTarget.dataset.profileVendor }
+    }));
+  });
+  content?.querySelector('[data-map-action="whatsapp"]')?.addEventListener('click', () => {
+    const phone = String(vendor.whatsapp || vendor.phone || '').replace(/\D/g, '');
+    if (phone) window.open(`https://wa.me/${phone}`);
+  });
+  content?.querySelector('[data-map-action="call"]')?.addEventListener('click', () => {
+    const phone = String(vendor.phone || '').replace(/\D/g, '');
+    if (phone) window.open(`tel:${phone}`);
+  });
   
-  // Highlight pin visually (could add a class to the marker's icon)
-  document.querySelectorAll('.elegant-pin').forEach(el => el.classList.remove('active-pin'));
-  if (marker._icon) {
-    const pin = marker._icon.querySelector('.elegant-pin');
-    if (pin) pin.classList.add('active-pin');
-  }
+  // Custom Logic to handle bottom sheet states in app.js or here
+  const sheet = document.getElementById('bottom-sheet');
+  sheet.classList.remove('state-half', 'state-full');
+  sheet.classList.add('state-collapsed');
 
-  // Pan to marker slightly offset to account for bottom cards
-  const latlng = marker.getLatLng();
-  map.panTo([latlng.lat - 0.005, latlng.lng], { animate: true });
+  // Add simple touch drag logic for the sheet
+  setupBottomSheetDrag(sheet);
+}
+
+function setupBottomSheetDrag(sheet) {
+  let startY = 0;
+  let currentY = 0;
+  
+  const handleTouchStart = (e) => {
+    startY = e.touches[0].clientY;
+  };
+  
+  const handleTouchMove = (e) => {
+    currentY = e.touches[0].clientY;
+    const diff = startY - currentY;
+    // Simple state machine: Collapsed -> Half -> Full
+    if (diff > 50 && sheet.classList.contains('state-collapsed')) {
+      sheet.classList.remove('state-collapsed');
+      sheet.classList.add('state-half');
+      startY = currentY; // reset
+    } else if (diff > 50 && sheet.classList.contains('state-half')) {
+      sheet.classList.remove('state-half');
+      sheet.classList.add('state-full');
+      startY = currentY;
+    } else if (diff < -50 && sheet.classList.contains('state-full')) {
+      sheet.classList.remove('state-full');
+      sheet.classList.add('state-half');
+      startY = currentY;
+    } else if (diff < -50 && sheet.classList.contains('state-half')) {
+      sheet.classList.remove('state-half');
+      sheet.classList.add('state-collapsed');
+      startY = currentY;
+    } else if (diff < -100 && sheet.classList.contains('state-collapsed')) {
+      // Close completely
+      document.getElementById('bottom-sheet-backdrop').click();
+    }
+  };
+
+  // Clean up old listeners first to avoid duplicates
+  const handle = sheet.querySelector('.bottom-sheet-handle');
+  if (handle) {
+    const newHandle = handle.cloneNode(true);
+    handle.parentNode.replaceChild(newHandle, handle);
+    newHandle.addEventListener('touchstart', handleTouchStart);
+    newHandle.addEventListener('touchmove', handleTouchMove);
+  }
 }
 
 function bindMapEvents(container) {
@@ -293,118 +371,33 @@ function bindMapEvents(container) {
       chip.classList.add('active');
       activeCategory = chip.dataset.cat;
       const filtered = activeCategory === 'all' ? VENDORS : VENDORS.filter(v => v.category === activeCategory);
-      plotVendors(filtered);
+      map.getSource('vendors').setData(getVendorsGeoJSON(filtered));
     });
   });
 
   // Locate button
   document.getElementById('map-locate')?.addEventListener('click', () => {
-    // Add pulsing user location marker if it doesn't exist
-    const userLat = -22.5609;
-    const userLng = 17.0658;
-    
-    const userIcon = L.divIcon({
-      className: 'user-location-marker',
-      html: `<div class="pulse-ring"></div><div class="pulse-core"></div>`,
-      iconSize: [24, 24],
-      iconAnchor: [12, 12]
-    });
-    
-    L.marker([userLat, userLng], { icon: userIcon, zIndexOffset: 1000 }).addTo(map);
-    map.setView([userLat, userLng], 14, { animate: true });
+    map.flyTo({ center: [17.0658, -22.5609], zoom: 14 });
   });
 
   // Near me button
   document.getElementById('map-near-btn')?.addEventListener('click', () => {
-    // Simulate finding nearest vendors within 5km
-    const nearby = VENDORS.filter(v => v.distance <= 5).sort((a,b) => a.distance - b.distance);
-    plotVendors(nearby);
-    if(nearby.length > 0) {
-      const group = L.featureGroup(nearby.map(r => currentMarkers[r.id]));
-      map.fitBounds(group.getBounds().pad(0.1), { animate: true });
-    }
-  });
-
-  // Filter button
-  document.getElementById('map-filter-btn')?.addEventListener('click', () => {
-    const filterHTML = `
-      <div class="filter-sheet">
-        <h3 class="filter-title">Advanced Filters</h3>
-        
-        <div class="filter-group">
-          <label class="filter-label">Sort By</label>
-          <div class="filter-options">
-            <button class="filter-opt active">Distance</button>
-            <button class="filter-opt">Rating</button>
-            <button class="filter-opt">Popularity</button>
-          </div>
-        </div>
-
-        <div class="filter-group">
-          <label class="filter-label">Distance</label>
-          <div class="filter-options">
-            <button class="filter-opt active">1km</button>
-            <button class="filter-opt">5km</button>
-            <button class="filter-opt">10km</button>
-            <button class="filter-opt">20km</button>
-          </div>
-        </div>
-
-        <div class="filter-group">
-          <label class="filter-label">Vendor Status</label>
-          <div class="filter-options">
-            <button class="filter-opt active">Open Now</button>
-            <button class="filter-opt">Verified Only</button>
-          </div>
-        </div>
-
-        <div class="filter-actions">
-          <button class="btn btn-outline" id="filter-reset-btn">Reset</button>
-          <button class="btn btn-primary" id="filter-apply-btn" onclick="document.getElementById('bottom-sheet-backdrop').click()">Apply Filters</button>
-        </div>
-      </div>
-    `;
-    document.getElementById('app').dispatchEvent(new CustomEvent('openBottomSheet', { detail: { html: filterHTML } }));
+    map.flyTo({ center: [17.0658, -22.5609], zoom: 15, pitch: 60 });
   });
 
   // Search area button
   document.getElementById('map-area-btn')?.addEventListener('click', () => {
     const btn = document.getElementById('map-area-btn');
     if (btn) btn.style.transform = 'translate(-50%, 0) scale(0)'; // Hide it
-
-    const bounds = map.getBounds();
-    const visible = VENDORS.filter(v => bounds.contains([v.lat, v.lng]));
-    const filtered = activeCategory === 'all' ? visible : visible.filter(v => v.category === activeCategory);
-    plotVendors(filtered);
-  });
-
-  // Search input
-  document.getElementById('map-search-input')?.addEventListener('input', (e) => {
-    const q = e.target.value.toLowerCase();
-    if (q.length < 2) {
-      plotVendors(activeCategory === 'all' ? VENDORS : VENDORS.filter(v => v.category === activeCategory));
-      return;
-    }
-    const results = VENDORS.filter(v =>
-      v.name.toLowerCase().includes(q) ||
-      v.categoryName.toLowerCase().includes(q)
-    );
-    plotVendors(results);
-    if (results.length > 0) {
-      const group = L.featureGroup(results.map(r => currentMarkers[r.id]));
-      map.fitBounds(group.getBounds().pad(0.1), { animate: true });
-    }
+    // Logic to fetch new vendors based on map.getBounds() would go here
   });
 }
 
 export function destroyMap() {
-  if (searchPlaceholderInterval) {
-    clearInterval(searchPlaceholderInterval);
-  }
+  if (searchPlaceholderInterval) clearInterval(searchPlaceholderInterval);
   if (map) {
     map.remove();
     map = null;
   }
-  markerCluster = null;
-  currentMarkers = {};
+  markersOnScreen = {};
 }

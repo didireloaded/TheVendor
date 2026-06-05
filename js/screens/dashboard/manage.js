@@ -2,7 +2,8 @@
 // THE VENDOR — Dashboard Management Screen
 // ============================================
 
-import { TOP_PRODUCTS, OPPORTUNITIES } from '../../dashboard-data.js';
+import { closeBottomSheet, openBottomSheet, showToast } from '../../app.js';
+import { escapeAttr } from '../../lib/sanitize.js';
 
 export function renderDashboardManage(container) {
   container.innerHTML = `
@@ -34,24 +35,7 @@ export function renderDashboardManage(container) {
       </div>
       
       <div class="manage-grid" id="manage-services-grid">
-        ${TOP_PRODUCTS.map((p, idx) => `
-          <div class="manage-item-card" data-idx="${idx}">
-            <div class="manage-item-thumb">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width: 24px; height: 24px; color: var(--text-tertiary);"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-            </div>
-            <div class="manage-item-info">
-              <div class="manage-item-title">${p.name}</div>
-              <div class="manage-item-price">${p.price}</div>
-              <div style="font-size: 10px; color: ${p.stock === 0 ? 'var(--error-600)' : (p.stock < 5 ? 'var(--amber-600)' : 'var(--green-600)')}; font-weight: bold; margin-bottom: var(--space-2);">
-                ${p.stock > 0 ? `${p.stock} in stock` : 'Out of stock'}
-              </div>
-              <div class="manage-item-actions">
-                <button class="manage-action-btn edit-svc-btn" data-name="${p.name}" data-price="${p.price}">Edit</button>
-                <button class="manage-action-btn hide-svc-btn">Hide</button>
-              </div>
-            </div>
-          </div>
-        `).join('')}
+        <div style="font-size: 13px; color: var(--text-tertiary); text-align: center; padding: 20px 0; grid-column: 1 / -1;">No offerings added yet. Click 'Add New Offering' to get started.</div>
       </div>
       <button id="manage-add-offering" style="width: 100%; padding: 12px; border-radius: var(--radius-lg); background: white; border: 1px dashed var(--primary-500); color: var(--primary-600); font-weight: bold; font-size: var(--text-sm); display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: var(--space-5); cursor: pointer;">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -64,21 +48,7 @@ export function renderDashboardManage(container) {
         <div class="dash-card-subtitle">Grow your business</div>
       </div>
       
-      ${OPPORTUNITIES.map(opp => `
-      <div class="opportunity-card">
-        <div class="opportunity-badge">High Match</div>
-        <div class="opportunity-title">${opp.title}</div>
-        <div class="opportunity-desc">${opp.description}</div>
-        <div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: var(--space-4); font-size: 11px; opacity: 0.9;">
-          <div style="display: flex; align-items: center; gap: 6px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 12px; height: 12px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> ${opp.date}</div>
-          <div style="display: flex; align-items: center; gap: 6px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 12px; height: 12px;"><circle cx="12" cy="10" r="3"/><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/></svg> ${opp.location}</div>
-        </div>
-        <div class="opportunity-actions">
-          <button class="opp-btn">Register</button>
-          <button class="opp-btn secondary">Remind Me</button>
-        </div>
-      </div>
-      `).join('')}
+      <div style="font-size: 13px; color: var(--text-tertiary); text-align: center; padding: 20px 0;">No new opportunities at this time.</div>
 
       <!-- Settings -->
       <div class="dash-card" style="padding: var(--space-4); margin-bottom: 0; cursor: pointer;" id="manage-settings-btn">
@@ -99,57 +69,52 @@ export function renderDashboardManage(container) {
     </div>
   `;
 
-  // Import openBottomSheet and showToast from app.js
-  import('../../app.js').then(({ openBottomSheet, closeBottomSheet, showToast }) => {
-    
-    // Hide service
-    container.querySelectorAll('.hide-svc-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const card = e.target.closest('.manage-item-card');
-        card.style.opacity = '0.5';
-        e.target.textContent = 'Unhide';
-        showToast('Service hidden from public profile');
-      });
+  // Hide service
+  container.querySelectorAll('.hide-svc-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const card = e.target.closest('.manage-item-card');
+      card.style.opacity = '0.5';
+      e.target.textContent = 'Unhide';
+      showToast('Service hidden from public profile');
     });
+  });
 
-    // Edit service
-    container.querySelectorAll('.edit-svc-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const name = e.target.dataset.name;
-        const price = e.target.dataset.price;
-        openServiceForm(openBottomSheet, closeBottomSheet, showToast, name, price);
-      });
+  // Edit service
+  container.querySelectorAll('.edit-svc-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const name = e.target.dataset.name;
+      const price = e.target.dataset.price;
+      openServiceForm(name, price);
     });
+  });
 
-    // Add service
-    document.getElementById('manage-add-offering')?.addEventListener('click', () => {
-      openServiceForm(openBottomSheet, closeBottomSheet, showToast);
-    });
+  // Add service
+  document.getElementById('manage-add-offering')?.addEventListener('click', () => {
+    openServiceForm();
+  });
 
-    // Edit Profile
-    document.getElementById('manage-profile-btn')?.addEventListener('click', () => {
-      openProfileForm(openBottomSheet, closeBottomSheet, showToast);
-    });
+  // Edit Profile
+  document.getElementById('manage-profile-btn')?.addEventListener('click', () => {
+    openProfileForm();
+  });
 
-    // Settings
-    document.getElementById('manage-settings-btn')?.addEventListener('click', () => {
-      openSettingsForm(openBottomSheet, closeBottomSheet, showToast);
-    });
-
+  // Settings
+  document.getElementById('manage-settings-btn')?.addEventListener('click', () => {
+    openSettingsForm();
   });
 }
 
-function openServiceForm(openBottomSheet, closeBottomSheet, showToast, initialName = '', initialPrice = '') {
+function openServiceForm(initialName = '', initialPrice = '') {
   const html = `
     <div style="padding: var(--space-4);">
       <h3 style="font-size: 18px; font-weight: bold; margin-bottom: var(--space-4);">${initialName ? 'Edit' : 'Add'} Offering</h3>
       <div class="form-group">
         <label class="form-label">Service Name</label>
-        <input type="text" class="form-input" id="bs-svc-name" value="${initialName}" placeholder="e.g. Graphic Design" />
+        <input type="text" class="form-input" id="bs-svc-name" value="${escapeAttr(initialName)}" placeholder="e.g. Graphic Design" />
       </div>
       <div class="form-group">
         <label class="form-label">Price</label>
-        <input type="text" class="form-input" id="bs-svc-price" value="${initialPrice}" placeholder="e.g. N$ 500" />
+        <input type="text" class="form-input" id="bs-svc-price" value="${escapeAttr(initialPrice)}" placeholder="e.g. N$ 500" />
       </div>
       <button class="btn btn-primary btn-full" id="bs-svc-save" style="margin-top: var(--space-4);">Save</button>
     </div>
@@ -164,13 +129,13 @@ function openServiceForm(openBottomSheet, closeBottomSheet, showToast, initialNa
   }, 100);
 }
 
-function openProfileForm(openBottomSheet, closeBottomSheet, showToast) {
+function openProfileForm() {
   const html = `
     <div style="padding: var(--space-4);">
       <h3 style="font-size: 18px; font-weight: bold; margin-bottom: var(--space-4);">Profile & Branding</h3>
       <div class="form-group">
         <label class="form-label">Business Name</label>
-        <input type="text" class="form-input" value="VisionHaus Media" />
+        <input type="text" class="form-input" id="bs-prof-name" placeholder="Your Business Name" />
       </div>
       <div class="form-group">
         <label class="form-label">Bio</label>
@@ -189,7 +154,7 @@ function openProfileForm(openBottomSheet, closeBottomSheet, showToast) {
   }, 100);
 }
 
-function openSettingsForm(openBottomSheet, closeBottomSheet, showToast) {
+function openSettingsForm() {
   const html = `
     <div style="padding: var(--space-4);">
       <h3 style="font-size: 18px; font-weight: bold; margin-bottom: var(--space-4);">Settings</h3>

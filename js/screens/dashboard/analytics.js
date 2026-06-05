@@ -2,7 +2,6 @@
 // THE VENDOR — Dashboard Analytics Screen
 // ============================================
 
-import { DASH_METRICS, SEARCH_PERFORMANCE, TOP_SERVICES, LOCATION_ANALYTICS, REVIEWS_SUMMARY } from '../../dashboard-data.js';
 import { renderTrend } from '../../dashboard-app.js';
 
 export function renderDashboardAnalytics(container) {
@@ -51,18 +50,7 @@ export function renderDashboardAnalytics(container) {
         <div class="dash-card-subtitle">Where your leads are coming from</div>
       </div>
       <div class="data-list">
-        ${LOCATION_ANALYTICS.map(loc => `
-          <div style="margin-bottom: var(--space-3);">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-              <span style="font-size: var(--text-sm); font-weight: 500;">${loc.region}</span>
-              <span style="font-size: var(--text-sm); font-weight: bold;">${loc.percentage}%</span>
-            </div>
-            <div style="width: 100%; height: 8px; background: var(--gray-100); border-radius: 4px; overflow: hidden;">
-              <div style="width: ${loc.percentage}%; height: 100%; background: var(--primary-500); border-radius: 4px;"></div>
-            </div>
-            <div style="font-size: 10px; color: var(--text-tertiary); margin-top: 4px;">${loc.views.toLocaleString()} views</div>
-          </div>
-        `).join('')}
+        <div style="font-size: 13px; color: var(--text-tertiary); text-align: center; padding: 20px 0;">Not enough data to display location analytics yet.</div>
       </div>
     </div>
 
@@ -74,26 +62,15 @@ export function renderDashboardAnalytics(container) {
       </div>
       <div style="display: flex; gap: var(--space-4); margin-bottom: var(--space-4); align-items: center;">
         <div style="text-align: center;">
-          <div style="font-size: 32px; font-weight: bold; color: var(--text-primary); line-height: 1;">${REVIEWS_SUMMARY.rating}</div>
-          <div style="color: var(--gold-400); margin: 4px 0; display: flex; gap: 2px;">
+          <div style="font-size: 32px; font-weight: bold; color: var(--text-primary); line-height: 1;">0.0</div>
+          <div style="color: var(--gray-300); margin: 4px 0; display: flex; gap: 2px;">
             <i data-lucide="star" style="width: 14px; height: 14px; fill: currentColor;"></i>
             <i data-lucide="star" style="width: 14px; height: 14px; fill: currentColor;"></i>
             <i data-lucide="star" style="width: 14px; height: 14px; fill: currentColor;"></i>
             <i data-lucide="star" style="width: 14px; height: 14px; fill: currentColor;"></i>
             <i data-lucide="star" style="width: 14px; height: 14px; fill: currentColor;"></i>
           </div>
-          <div style="font-size: 10px; color: var(--text-tertiary);">${REVIEWS_SUMMARY.total} Reviews</div>
-        </div>
-        <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-          ${Object.entries(REVIEWS_SUMMARY.distribution).reverse().map(([stars, count]) => `
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="font-size: 10px; color: var(--text-secondary); width: 12px;">${stars}</span>
-              <svg viewBox="0 0 24 24" fill="currentColor" style="width: 10px; height: 10px; color: var(--gold-400);"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-              <div style="flex: 1; height: 4px; background: var(--gray-100); border-radius: 2px; overflow: hidden;">
-                <div style="width: ${(count / REVIEWS_SUMMARY.total) * 100}%; height: 100%; background: var(--gold-400); border-radius: 2px;"></div>
-              </div>
-            </div>
-          `).join('')}
+          <div style="font-size: 10px; color: var(--text-tertiary);">0 Reviews</div>
         </div>
       </div>
     </div>
@@ -104,21 +81,7 @@ export function renderDashboardAnalytics(container) {
         <div class="dash-card-title">Top Services</div>
       </div>
       <div style="display: flex; flex-direction: column; gap: var(--space-4);">
-        ${TOP_SERVICES.map(s => `
-          <div>
-            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-              <span style="font-size: var(--text-sm); font-weight: bold;">${s.name}</span>
-              <span style="font-size: var(--text-sm); color: var(--green-600); font-weight: bold;">${s.revenue}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-tertiary); margin-bottom: 8px;">
-              <span>${s.views} Views · ${s.inquiries} Inquiries · ${s.bookings} Bookings</span>
-              <span>${s.conversion}% Conv.</span>
-            </div>
-            <div style="width: 100%; height: 6px; background: var(--gray-100); border-radius: 3px; overflow: hidden;">
-              <div style="width: ${(s.inquiries / s.views) * 100 * 2}%; height: 100%; background: var(--primary-500); border-radius: 3px;"></div>
-            </div>
-          </div>
-        `).join('')}
+        <div style="font-size: 13px; color: var(--text-tertiary); text-align: center; padding: 20px 0;">No services added yet.</div>
       </div>
     </div>
 
@@ -129,15 +92,7 @@ export function renderDashboardAnalytics(container) {
         <div class="dash-card-subtitle">What users searched to find you</div>
       </div>
       <div style="display: flex; flex-direction: column; gap: var(--space-3);">
-        ${SEARCH_PERFORMANCE.map(k => `
-          <div style="display: flex; align-items: center; justify-content: space-between; padding: var(--space-2) 0; border-bottom: 1px solid var(--gray-100);">
-            <div style="font-size: var(--text-sm); color: var(--text-secondary);">${k.keyword}</div>
-            <div style="text-align: right;">
-              <div style="font-size: var(--text-sm); font-weight: bold;">${k.volume}</div>
-              <div style="font-size: 10px; color: var(--text-tertiary);">${k.conversion}% conv</div>
-            </div>
-          </div>
-        `).join('')}
+         <div style="font-size: 13px; color: var(--text-tertiary); text-align: center; padding: 20px 0;">Not enough data to display search keywords yet.</div>
       </div>
     </div>
   `;
@@ -154,14 +109,14 @@ export function renderDashboardAnalytics(container) {
         datasets: [
           {
             label: 'Views',
-            data: DASH_METRICS.chartData.views,
+            data: [0, 0, 0, 0, 0, 0, 0],
             backgroundColor: 'rgba(26, 111, 239, 0.8)',
             borderRadius: 4,
             barPercentage: 0.6
           },
           {
             label: 'Leads',
-            data: DASH_METRICS.chartData.leads,
+            data: [0, 0, 0, 0, 0, 0, 0],
             backgroundColor: 'rgba(34, 197, 94, 0.8)',
             borderRadius: 4,
             barPercentage: 0.6

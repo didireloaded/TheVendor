@@ -4,9 +4,10 @@
 // ============================================
 
 import { renderHomeScreen } from './screens/home.js';
-import { renderExploreScreen } from './screens/explore.js';
+import { renderExploreScreen, destroyExplore } from './screens/explore.js';
 import { renderMapScreen, destroyMap } from './screens/map.js';
-import { renderFavoritesScreen } from './screens/favorites.js';
+import { renderChatScreen } from './screens/chat.js';
+import { renderSavedVendorsScreen } from './screens/saved-vendors.js';
 import { renderProfileScreen } from './screens/profile.js';
 import { renderSearchScreen, destroySearch } from './screens/search.js';
 import { renderVendorProfile, closeVendorProfile } from './screens/vendor-profile.js';
@@ -14,6 +15,8 @@ import { renderAdminScreen } from './screens/admin.js';
 import { renderNotificationsScreen } from './screens/notifications.js';
 import { renderAuthScreen } from './screens/auth.js';
 import { renderVendorRegistration } from './screens/vendor-registration.js';
+import { initData } from './data.js';
+import { supabase } from './lib/supabase.js';
 
 // ---------- State ----------
 const state = {
@@ -22,11 +25,13 @@ const state = {
   favorites: new Set(),
   searchQuery: '',
   showSearch: false,
-  isAuthenticated: !!localStorage.getItem('tv_authenticated'),
+  isAuthenticated: false,
+  hasInitialized: false,
 };
 
 // ---------- Boot Sequence ----------
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  await refreshAuthState();
   initSplash();
   
   // Custom events
@@ -39,9 +44,14 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('app').addEventListener('navigate', (e) => {
     navigateTo(e.detail);
   });
-  window.addEventListener('authComplete', () => {
-    state.isAuthenticated = true;
+  window.addEventListener('authComplete', (event) => {
+    state.isAuthenticated = !event.detail?.guest;
+    showAppShell();
     initApp();
+  });
+
+  supabase.auth.onAuthStateChange((_event, session) => {
+    state.isAuthenticated = !!session;
   });
 });
 
@@ -66,11 +76,9 @@ function initSplash() {
         onboarding.classList.remove('hidden');
         initOnboarding();
       } else if (!state.isAuthenticated) {
-        const authScreen = document.getElementById('auth-screen');
-        authScreen.classList.remove('hidden');
-        renderAuthScreen(authScreen);
+        showAuthScreen();
       } else {
-        app.classList.remove('hidden');
+        showAppShell();
         initApp();
       }
     }, 500);
@@ -127,11 +135,9 @@ function initOnboarding() {
     setTimeout(() => {
       onboarding.classList.add('hidden');
       if (!state.isAuthenticated) {
-        const authScreen = document.getElementById('auth-screen');
-        authScreen.classList.remove('hidden');
-        renderAuthScreen(authScreen);
+        showAuthScreen();
       } else {
-        app.classList.remove('hidden');
+        showAppShell();
         initApp();
       }
     }, 400);
@@ -139,15 +145,40 @@ function initOnboarding() {
 }
 
 // ---------- App Init ----------
-function initApp() {
+async function initApp() {
+  if (state.hasInitialized) return;
+  await initData();
+  state.hasInitialized = true;
+  
   // Load favorites from localStorage
   const savedFavs = localStorage.getItem('tv_favorites');
   if (savedFavs) {
-    JSON.parse(savedFavs).forEach(id => state.favorites.add(id));
+    try {
+      JSON.parse(savedFavs).forEach(id => state.favorites.add(id));
+    } catch {
+      localStorage.removeItem('tv_favorites');
+    }
   }
 
   initNavigation();
   navigateTo('home');
+}
+
+async function refreshAuthState() {
+  const { data: { session } } = await supabase.auth.getSession();
+  state.isAuthenticated = !!session;
+}
+
+function showAppShell() {
+  document.getElementById('auth-screen')?.classList.add('hidden');
+  document.getElementById('app')?.classList.remove('hidden');
+}
+
+function showAuthScreen() {
+  const authScreen = document.getElementById('auth-screen');
+  document.getElementById('app')?.classList.add('hidden');
+  authScreen.classList.remove('hidden');
+  renderAuthScreen(authScreen);
 }
 
 // ---------- Navigation ----------
@@ -162,14 +193,20 @@ function initNavigation() {
   });
 }
 
-export function navigateTo(screen) {
-  if (screen === state.currentScreen && screen !== 'home') return;
+export function navigateTo(screen, params = {}) {
+  if (screen === 'auth') {
+    showAuthScreen();
+    return;
+  }
+
+  if (screen === state.currentScreen && screen !== 'home' && Object.keys(params).length === 0) return;
 
   // Close any open overlays
   closeVendorProfile();
   closeBottomSheet();
 
   // Destroy previous screen resources
+  if (state.currentScreen === 'explore') destroyExplore();
   if (state.currentScreen === 'map') destroyMap();
   if (state.currentScreen === 'search') destroySearch();
 
@@ -198,13 +235,16 @@ export function navigateTo(screen) {
       renderHomeScreen(container);
       break;
     case 'explore':
-      renderExploreScreen(container);
+      renderExploreScreen(container, params);
       break;
     case 'map':
       renderMapScreen(container);
       break;
-    case 'favorites':
-      renderFavoritesScreen(container);
+    case 'chat':
+      renderChatScreen(container);
+      break;
+    case 'saved-vendors':
+      renderSavedVendorsScreen(container);
       break;
     case 'profile':
       renderProfileScreen(container);
@@ -316,6 +356,7 @@ export const icons = {
   crosshair: '<i data-lucide="crosshair" style="width: 24px; height: 24px;"></i>',
   clock: '<i data-lucide="clock-3" style="width: 24px; height: 24px;"></i>',
   email: '<i data-lucide="mail" style="width: 24px; height: 24px;"></i>',
+  mail: '<i data-lucide="mail" style="width: 24px; height: 24px;"></i>',
   globe: '<i data-lucide="globe" style="width: 24px; height: 24px;"></i>',
   bell: '<i data-lucide="bell" style="width: 24px; height: 24px;"></i>',
   settings: '<i data-lucide="settings" style="width: 24px; height: 24px;"></i>',
@@ -331,6 +372,22 @@ export const icons = {
   shield: '<i data-lucide="shield" style="width: 24px; height: 24px;"></i>',
   fileText: '<i data-lucide="file-text" style="width: 24px; height: 24px;"></i>',
   user: '<i data-lucide="user" style="width: 24px; height: 24px;"></i>',
+  userRound: '<i data-lucide="user-round" style="width: 24px; height: 24px;"></i>',
+  edit2: '<i data-lucide="edit-2" style="width: 24px; height: 24px;"></i>',
+  share2: '<i data-lucide="share-2" style="width: 24px; height: 24px;"></i>',
+  qrCode: '<i data-lucide="qr-code" style="width: 24px; height: 24px;"></i>',
+  calendarCheck: '<i data-lucide="calendar-check" style="width: 24px; height: 24px;"></i>',
+  layoutDashboard: '<i data-lucide="layout-dashboard" style="width: 24px; height: 24px;"></i>',
+  chartColumn: '<i data-lucide="chart-column" style="width: 24px; height: 24px;"></i>',
+  users: '<i data-lucide="users" style="width: 24px; height: 24px;"></i>',
+  trash2: '<i data-lucide="trash-2" style="width: 24px; height: 24px;"></i>',
+  shieldCheck: '<i data-lucide="shield-check" style="width: 24px; height: 24px;"></i>',
+  shieldAlert: '<i data-lucide="shield-alert" style="width: 24px; height: 24px;"></i>',
+  lock: '<i data-lucide="lock" style="width: 24px; height: 24px;"></i>',
+  smartphone: '<i data-lucide="smartphone" style="width: 24px; height: 24px;"></i>',
+  creditCard: '<i data-lucide="credit-card" style="width: 24px; height: 24px;"></i>',
+  receipt: '<i data-lucide="receipt" style="width: 24px; height: 24px;"></i>',
+  moon: '<i data-lucide="moon" style="width: 24px; height: 24px;"></i>',
 };
 
 // Export Lucide wrapper

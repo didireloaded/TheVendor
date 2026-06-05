@@ -6,6 +6,7 @@
 import { CATEGORIES } from '../data.js';
 import { supabase } from '../lib/supabase.js';
 import { navigateTo, refreshIcons, showToast } from '../app.js';
+import { escapeHtml, escapeAttr, safeHexColor } from '../lib/sanitize.js';
 
 let currentStep = 0;
 const totalSteps = 4;
@@ -83,23 +84,29 @@ export function renderVendorRegistration(container) {
       btn.disabled = true;
 
       try {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError || !session) {
+          showToast('Please sign in to register a business', 'error');
+          navigateTo('auth');
+          return;
+        }
+
         const vendorId = formData.businessName.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + Math.floor(Math.random() * 1000);
         
-        const catObj = CATEGORIES.find(c => c.id === formData.category);
         const { error: vendorError } = await supabase.from('vendors').insert({
           id: vendorId,
-          name: formData.businessName,
+          user_id: session.user.id,
+          businessName: formData.businessName,
           category: formData.category,
-          category_name: catObj ? catObj.name : formData.category,
           description: formData.description,
           phone: formData.phone,
           whatsapp: formData.whatsapp,
           email: formData.email,
           address: formData.address,
-          cover_gradient: formData.coverColor,
-          logo_initials: formData.logoInitials,
-          verified: false,
-          verified_level: 'draft'
+          coverGradient: formData.coverColor,
+          logoInitials: formData.logoInitials,
+          verificationStatus: 'draft',
+          status: 'pending_review'
         });
 
         if (vendorError) throw vendorError;
@@ -145,20 +152,20 @@ function renderStep(body) {
 
           <div class="form-group">
             <label class="form-label">Business Name</label>
-            <input class="form-input" type="text" id="reg-biz-name" placeholder="e.g. VisionHaus Media" value="${formData.businessName}" />
+            <input class="form-input" type="text" id="reg-biz-name" placeholder="e.g. VisionHaus Media" value="${escapeAttr(formData.businessName)}" />
           </div>
 
           <div class="form-group">
             <label class="form-label">Category</label>
             <select class="form-input form-select" id="reg-category">
               <option value="">Select a category</option>
-              ${CATEGORIES.map(c => `<option value="${c.id}" ${formData.category === c.id ? 'selected' : ''}>${c.name}</option>`).join('')}
+              ${CATEGORIES.map(c => `<option value="${escapeAttr(c.id)}" ${formData.category === c.id ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('')}
             </select>
           </div>
 
           <div class="form-group">
             <label class="form-label">Description</label>
-            <textarea class="form-input" id="reg-description" placeholder="Describe what your business does..." rows="3">${formData.description}</textarea>
+            <textarea class="form-input" id="reg-description" placeholder="Describe what your business does..." rows="3">${escapeHtml(formData.description)}</textarea>
           </div>
         </div>
       `;
@@ -177,7 +184,7 @@ function renderStep(body) {
             <label class="form-label">Phone Number</label>
             <div class="auth-input-wrap">
               <span class="auth-phone-prefix">+264</span>
-              <input class="form-input auth-input auth-phone-input" type="tel" id="reg-phone" placeholder="81 234 5678" value="${formData.phone}" />
+              <input class="form-input auth-input auth-phone-input" type="tel" id="reg-phone" placeholder="81 234 5678" value="${escapeAttr(formData.phone)}" />
             </div>
           </div>
 
@@ -185,18 +192,18 @@ function renderStep(body) {
             <label class="form-label">WhatsApp (if different)</label>
             <div class="auth-input-wrap">
               <span class="auth-phone-prefix">+264</span>
-              <input class="form-input auth-input auth-phone-input" type="tel" id="reg-whatsapp" placeholder="81 234 5678" value="${formData.whatsapp}" />
+              <input class="form-input auth-input auth-phone-input" type="tel" id="reg-whatsapp" placeholder="81 234 5678" value="${escapeAttr(formData.whatsapp)}" />
             </div>
           </div>
 
           <div class="form-group">
             <label class="form-label">Business Email</label>
-            <input class="form-input" type="email" id="reg-email" placeholder="info@mybusiness.na" value="${formData.email}" />
+            <input class="form-input" type="email" id="reg-email" placeholder="info@mybusiness.na" value="${escapeAttr(formData.email)}" />
           </div>
 
           <div class="form-group">
             <label class="form-label">Business Address</label>
-            <input class="form-input" type="text" id="reg-address" placeholder="e.g. Plot 23, Windhoek West" value="${formData.address}" />
+            <input class="form-input" type="text" id="reg-address" placeholder="e.g. Plot 23, Windhoek West" value="${escapeAttr(formData.address)}" />
           </div>
 
           <div class="reg-map-placeholder">
@@ -303,8 +310,8 @@ function renderStep(body) {
           <div class="form-group">
             <label class="form-label">Logo / Profile Photo</label>
             <div class="reg-logo-upload" id="reg-logo-upload">
-              <div class="reg-logo-preview" style="background: linear-gradient(135deg, ${formData.coverColor}, ${formData.coverColor}99);">
-                ${formData.logoInitials || (formData.businessName ? formData.businessName.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase() : 'TV')}
+              <div class="reg-logo-preview" style="background: linear-gradient(135deg, ${safeHexColor(formData.coverColor)}, ${safeHexColor(formData.coverColor)}99);">
+                ${escapeHtml(formData.logoInitials || (formData.businessName ? formData.businessName.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase() : 'TV'))}
               </div>
               <div>
                 <div class="reg-logo-label">Business Initials</div>
@@ -351,7 +358,7 @@ function renderStep(body) {
           body.querySelectorAll('.reg-color-swatch').forEach(s => s.classList.remove('active'));
           swatch.classList.add('active');
           const preview = body.querySelector('.reg-logo-preview');
-          if (preview) preview.style.background = `linear-gradient(135deg, ${formData.coverColor}, ${formData.coverColor}99)`;
+          if (preview) preview.style.background = `linear-gradient(135deg, ${safeHexColor(formData.coverColor)}, ${safeHexColor(formData.coverColor)}99)`;
         });
       });
       break;
@@ -364,8 +371,8 @@ function renderServiceCard(service, index) {
   return `
     <div class="reg-service-card">
       <div class="reg-svc-info">
-        <div class="reg-svc-name">${service.name}</div>
-        <div class="reg-svc-price">${service.price}</div>
+        <div class="reg-svc-name">${escapeHtml(service.name)}</div>
+        <div class="reg-svc-price">${escapeHtml(service.price)}</div>
       </div>
       <button class="reg-svc-delete" data-index="${index}">
         <i data-lucide="x" style="width: 16px; height: 16px;"></i>

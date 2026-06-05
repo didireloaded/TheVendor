@@ -5,6 +5,7 @@
 import { searchVendors, SEARCH_SUGGESTIONS, TRENDING_SEARCHES, CATEGORIES, VENDORS } from '../data.js';
 import { navigateTo, openVendorProfileById, icons } from '../app.js';
 import { getSemanticSearchCategories } from '../lib/ai.js';
+import { escapeHtml, escapeAttr, safeCssColor } from '../lib/sanitize.js';
 
 let searchTimeout = null;
 
@@ -119,30 +120,30 @@ async function handleSearch(query) {
 
   content.innerHTML = `
     <div style="padding: var(--space-2) var(--space-4);">
-      <span style="font-size: var(--text-sm); color: var(--text-tertiary);">${results.length} result${results.length !== 1 ? 's' : ''} for "${query}"</span>
+      <span style="font-size: var(--text-sm); color: var(--text-tertiary);">${results.length} result${results.length !== 1 ? 's' : ''} for "${escapeHtml(query)}"</span>
     </div>
     <div class="search-results">
       ${results.length > 0 ? results.map(v => `
-        <div class="vendor-card-compact" data-vendor-id="${v.id}">
-          <div class="card-thumb" style="background: ${v.coverGradient};">${v.logoInitials}</div>
+        <div class="vendor-card-compact" data-vendor-id="${escapeAttr(v.id)}">
+          <div class="card-thumb" style="background: ${safeCssColor(v.coverGradient)};">${escapeHtml(v.logoInitials)}</div>
           <div class="card-content">
             <div class="card-name">
               ${highlightMatch(v.name, query)}
-              ${v.verified ? `<span class="badge-verified ${v.verifiedLevel}">${icons.verifiedBadge}</span>` : ''}
+              ${v.verified ? `<span class="badge-verified ${escapeAttr(v.verifiedLevel)}">${icons.verifiedBadge}</span>` : ''}
             </div>
-            <span class="card-category-text">${v.categoryName}</span>
+            <span class="card-category-text">${escapeHtml(v.categoryName)}</span>
             <div class="card-meta">
               <span class="rating">
                 <span class="star">${icons.star}</span>
-                <span class="rating-text">${v.rating}</span>
-                <span class="rating-count">(${v.reviewCount})</span>
+                <span class="rating-text">${escapeHtml(v.rating)}</span>
+                <span class="rating-count">(${escapeHtml(v.reviewCount)})</span>
               </span>
-              <span class="distance">${icons.location} ${v.distance}km</span>
+              <span class="distance">${icons.location} ${escapeHtml(v.distance)}km</span>
               <span class="badge-pill ${v.isOpen ? 'badge-open' : 'badge-closed'}" style="font-size:10px;">${v.isOpen ? 'Open' : 'Closed'}</span>
             </div>
           </div>
           <div class="card-actions" style="justify-content: center;">
-            <button class="btn-sm btn-whatsapp" style="padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); font-size: 11px;" onclick="event.stopPropagation(); window.open('https://wa.me/${v.whatsapp}')">
+            <button class="btn-sm btn-whatsapp" data-whatsapp="${escapeAttr(v.whatsapp || '')}" style="padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); font-size: 11px;">
               ${icons.whatsapp}
             </button>
           </div>
@@ -168,6 +169,14 @@ async function handleSearch(query) {
     });
   });
 
+  content.querySelectorAll('[data-whatsapp]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const phone = btn.dataset.whatsapp.replace(/\D/g, '');
+      if (phone) window.open(`https://wa.me/${phone}`);
+    });
+  });
+
   document.getElementById('search-explore-btn')?.addEventListener('click', () => {
     navigateTo('explore');
   });
@@ -186,8 +195,10 @@ async function handleSearch(query) {
 }
 
 function highlightMatch(text, query) {
-  const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-  return text.replace(regex, '<mark style="background: var(--gold-100); color: inherit; padding: 0 1px; border-radius: 2px;">$1</mark>');
+  const safeText = escapeHtml(text || '');
+  const safeQuery = escapeHtml(query || '');
+  const regex = new RegExp(`(${safeQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+  return safeText.replace(regex, '<mark style="background: var(--gold-100); color: inherit; padding: 0 1px; border-radius: 2px;">$1</mark>');
 }
 
 export function destroySearch() {

@@ -4,6 +4,7 @@
 
 import { CATEGORIES, SEARCH_PLACEHOLDERS, getGreeting, getFeaturedVendors, getTrendingVendors, getNearbyVendors } from '../data.js';
 import { navigateTo, openVendorProfileById, toggleFavorite, isFavorite, icons } from '../app.js';
+import { escapeHtml, escapeAttr, safeCssColor, safeHexColor } from '../lib/sanitize.js';
 
 let placeholderInterval = null;
 
@@ -48,11 +49,11 @@ export function renderHomeScreen(container) {
         </div>
         <div class="category-scroll" id="home-categories">
           ${CATEGORIES.slice(0, 8).map(cat => `
-            <div class="category-pill" data-category="${cat.id}">
-              <div class="pill-icon" style="background: ${cat.color}15; color: ${cat.color};">
-                ${cat.icon}
+            <div class="category-pill" data-category="${escapeAttr(cat.id)}">
+              <div class="pill-icon" style="background: ${safeHexColor(cat.color)}15; color: ${safeHexColor(cat.color)};">
+                ${icons[cat.icon] || icons.briefcase}
               </div>
-              <span class="pill-label">${cat.name.split(' ')[0]}</span>
+              <span class="pill-label">${escapeHtml(cat.name.split(' ')[0])}</span>
             </div>
           `).join('')}
         </div>
@@ -116,6 +117,13 @@ export function renderHomeScreen(container) {
   // Category clicks
   document.querySelectorAll('.category-pill').forEach(pill => {
     pill.addEventListener('click', () => {
+      navigateTo('explore', { category: pill.dataset.category });
+    });
+  });
+
+  // See All clicks
+  document.querySelectorAll('.section-link').forEach(btn => {
+    btn.addEventListener('click', () => {
       navigateTo('explore');
     });
   });
@@ -168,27 +176,27 @@ function startPlaceholderRotation() {
 function renderFeaturedCard(vendor, index) {
   const fav = isFavorite(vendor.id);
   return `
-    <div class="vendor-card-large" data-vendor-id="${vendor.id}" style="animation-delay: ${index * 80}ms">
-      <div class="card-image" style="background: ${vendor.coverGradient};">
-        <span class="card-category">${vendor.categoryName.split(' ')[0]}</span>
-        <button class="card-favorite ${fav ? 'active' : ''}" data-fav-id="${vendor.id}">
+    <div class="vendor-card-large" data-vendor-id="${escapeAttr(vendor.id)}" style="animation-delay: ${index * 80}ms">
+      <div class="card-image" style="background: ${safeCssColor(vendor.coverGradient)};">
+        <span class="card-category">${escapeHtml(vendor.categoryName.split(' ')[0])}</span>
+        <button class="card-favorite ${fav ? 'active' : ''}" data-fav-id="${escapeAttr(vendor.id)}">
           ${icons.heart}
         </button>
       </div>
       <div class="card-body">
-        <div class="card-logo" style="background: ${vendor.logoGradient};">${vendor.logoInitials}</div>
+        <div class="card-logo" style="background: ${safeCssColor(vendor.logoGradient)};">${escapeHtml(vendor.logoInitials)}</div>
         <div class="card-info">
           <div class="card-name">
-            ${vendor.name}
-            ${vendor.verified ? `<span class="badge-verified ${vendor.verifiedLevel}">${icons.verifiedBadge}</span>` : ''}
+            ${escapeHtml(vendor.name)}
+            ${vendor.verified ? `<span class="badge-verified ${escapeAttr(vendor.verifiedLevel)}">${icons.verifiedBadge}</span>` : ''}
           </div>
           <div class="card-meta">
             <span class="rating">
               <span class="star">${icons.star}</span>
-              <span class="rating-text">${vendor.rating}</span>
-              <span class="rating-count">(${vendor.reviewCount})</span>
+              <span class="rating-text">${escapeHtml(vendor.rating)}</span>
+              <span class="rating-count">(${escapeHtml(vendor.reviewCount)})</span>
             </span>
-            <span class="distance">${icons.location} ${vendor.distance}km</span>
+            <span class="distance">${icons.location} ${escapeHtml(vendor.distance)}km</span>
           </div>
         </div>
       </div>
@@ -199,24 +207,24 @@ function renderFeaturedCard(vendor, index) {
 function renderNearbyCard(vendor, index) {
   const fav = isFavorite(vendor.id);
   return `
-    <div class="vendor-card-large" data-vendor-id="${vendor.id}" style="width: 220px; animation-delay: ${index * 80}ms">
-      <div class="card-image" style="background: ${vendor.coverGradient}; height: 120px;">
-        <button class="card-favorite ${fav ? 'active' : ''}" data-fav-id="${vendor.id}">
+    <div class="vendor-card-large" data-vendor-id="${escapeAttr(vendor.id)}" style="width: 220px; animation-delay: ${index * 80}ms">
+      <div class="card-image" style="background: ${safeCssColor(vendor.coverGradient)}; height: 120px;">
+        <button class="card-favorite ${fav ? 'active' : ''}" data-fav-id="${escapeAttr(vendor.id)}">
           ${icons.heart}
         </button>
       </div>
       <div class="card-body" style="padding-top: var(--space-3);">
         <div class="card-info" style="padding-top: 0;">
           <div class="card-name" style="font-size: var(--text-sm);">
-            ${vendor.name}
-            ${vendor.verified ? `<span class="badge-verified ${vendor.verifiedLevel}">${icons.verifiedBadge}</span>` : ''}
+            ${escapeHtml(vendor.name)}
+            ${vendor.verified ? `<span class="badge-verified ${escapeAttr(vendor.verifiedLevel)}">${icons.verifiedBadge}</span>` : ''}
           </div>
           <div class="card-meta" style="font-size: var(--text-xs);">
             <span class="rating">
               <span class="star">${icons.star}</span>
-              <span class="rating-text" style="font-size: var(--text-xs);">${vendor.rating}</span>
+              <span class="rating-text" style="font-size: var(--text-xs);">${escapeHtml(vendor.rating)}</span>
             </span>
-            <span class="distance" style="font-size: var(--text-xs);">${vendor.distance}km</span>
+            <span class="distance" style="font-size: var(--text-xs);">${escapeHtml(vendor.distance)}km</span>
             <span class="badge-pill ${vendor.isOpen ? 'badge-open' : 'badge-closed'}">${vendor.isOpen ? 'Open' : 'Closed'}</span>
           </div>
         </div>
@@ -228,25 +236,25 @@ function renderNearbyCard(vendor, index) {
 function renderCompactCard(vendor, index) {
   const fav = isFavorite(vendor.id);
   return `
-    <div class="vendor-card-compact" data-vendor-id="${vendor.id}" style="animation-delay: ${index * 80}ms">
-      <div class="card-thumb" style="background: ${vendor.coverGradient};">${vendor.logoInitials}</div>
+    <div class="vendor-card-compact" data-vendor-id="${escapeAttr(vendor.id)}" style="animation-delay: ${index * 80}ms">
+      <div class="card-thumb" style="background: ${safeCssColor(vendor.coverGradient)};">${escapeHtml(vendor.logoInitials)}</div>
       <div class="card-content">
         <div class="card-name">
-          ${vendor.name}
-          ${vendor.verified ? `<span class="badge-verified ${vendor.verifiedLevel}">${icons.verifiedBadge}</span>` : ''}
+          ${escapeHtml(vendor.name)}
+          ${vendor.verified ? `<span class="badge-verified ${escapeAttr(vendor.verifiedLevel)}">${icons.verifiedBadge}</span>` : ''}
         </div>
-        <span class="card-category-text">${vendor.categoryName}</span>
+        <span class="card-category-text">${escapeHtml(vendor.categoryName)}</span>
         <div class="card-meta">
           <span class="rating">
             <span class="star">${icons.star}</span>
-            <span class="rating-text">${vendor.rating}</span>
-            <span class="rating-count">(${vendor.reviewCount})</span>
+            <span class="rating-text">${escapeHtml(vendor.rating)}</span>
+            <span class="rating-count">(${escapeHtml(vendor.reviewCount)})</span>
           </span>
-          <span class="distance">${icons.location} ${vendor.distance}km</span>
+          <span class="distance">${icons.location} ${escapeHtml(vendor.distance)}km</span>
         </div>
       </div>
       <div class="card-actions">
-        <button class="card-favorite ${fav ? 'active' : ''}" data-fav-id="${vendor.id}" style="position:static; background: var(--gray-50);">
+        <button class="card-favorite ${fav ? 'active' : ''}" data-fav-id="${escapeAttr(vendor.id)}" style="position:static; background: var(--gray-50);">
           ${icons.heart}
         </button>
         <span class="badge-pill ${vendor.isOpen ? 'badge-open' : 'badge-closed'}" style="font-size: 10px;">${vendor.isOpen ? 'Open' : 'Closed'}</span>

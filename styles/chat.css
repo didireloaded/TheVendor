@@ -1,0 +1,172 @@
+/* ============================================
+   THE VENDOR — Chat Styles
+   ============================================ */
+
+/* Chat Overlay */
+.active-chat-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100dvh;
+  background: transparent;
+  z-index: 1000;
+  overflow-y: auto;
+  transform: translateX(100%);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+.active-chat-overlay.hidden {
+  display: none !important;
+}
+
+.active-chat-overlay:not(.hidden):not(.closing) {
+  transform: translateX(0);
+}
+
+.active-chat-overlay.closing {
+  transform: translateX(100%);
+}
+
+/* Chat Messages Area */
+.chat-messages-area {
+  background: transparent;
+}
+
+/* Message Bubbles */
+.message-bubble {
+  max-width: 80%;
+  padding: 10px 14px;
+  border-radius: 16px;
+  font-size: var(--text-md);
+  line-height: 1.4;
+  position: relative;
+  display: inline-block;
+  margin-bottom: 2px;
+}
+
+.message-bubble.sent {
+  align-self: flex-end;
+  background: var(--primary-500);
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+
+.message-bubble.received {
+  align-self: flex-start;
+  background: var(--gray-100);
+  color: var(--text-primary);
+  border-bottom-left-radius: 4px;
+}
+
+.message-time {
+  font-size: 10px;
+  margin-top: 4px;
+  opacity: 0.8;
+  text-align: right;
+}
+
+.message-bubble.received .message-time {
+  color: var(--text-tertiary);
+}
+
+/* System Message (Date divider) */
+.chat-system-message {
+  text-align: center;
+  margin: var(--space-3) 0;
+}
+
+.chat-system-message span {
+  background: var(--gray-100);
+  padding: 4px 12px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--gray-500);
+}
+
+/* Quote Card inside Message */
+.message-quote-card {
+  align-self: flex-start;
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  width: 85%;
+  max-width: 300px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: var(--space-2);
+}
+
+.quote-card-header {
+  background: var(--primary-50);
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--primary-700);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  border-bottom: 1px solid var(--primary-100);
+}
+
+.quote-card-header i {
+  width: 16px;
+  height: 16px;
+}
+
+.quote-card-body {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: var(--text-sm);
+}
+
+.quote-row {
+  display: flex;
+  justify-content: space-between;
+}
+
+.quote-row .label {
+  color: var(--text-secondary);
+}
+
+.quote-row .val {
+  font-weight: 500;
+  color: var(--text-primary);
+  text-align: right;
+}
+
+.quote-row .val.pending {
+  color: var(--gold-600);
+}
+
+/* Quick Actions */
+.btn-quick-action {
+  padding: 6px 12px;
+  border-radius: 100px;
+  background: white;
+  border: 1px solid var(--gray-200);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.btn-quick-action i {
+  width: 14px;
+  height: 14px;
+  color: var(--primary-500);
+}
+
+/* Input Area Overrides to ensure safe area */
+.chat-input-area {
+  padding-bottom: max(var(--space-3), env(safe-area-inset-bottom));
+}

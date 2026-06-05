@@ -20,7 +20,13 @@ body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: var(--bg-primary);
+  background-color: var(--bg-app);
+  background-image: 
+    radial-gradient(circle at top left, rgba(26, 111, 239, 0.25), transparent 50%),
+    radial-gradient(circle at bottom right, rgba(212, 168, 83, 0.25), transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(22, 163, 74, 0.15), transparent 40%),
+    radial-gradient(circle at 20% 80%, rgba(239, 68, 68, 0.15), transparent 40%);
+  background-attachment: fixed;
   color: var(--text-primary);
   line-height: 1.5;
   overflow-x: hidden;
@@ -93,6 +99,7 @@ ul, ol { list-style: none; }
   --gray-900: #111827;
 
   /* Semantic Colors */
+  --bg-app: #F4F7FB;
   --bg-primary: #FFFFFF;
   --bg-secondary: #F8F9FB;
   --bg-tertiary: #F1F3F5;
@@ -100,8 +107,14 @@ ul, ol { list-style: none; }
   --text-secondary: #4B5563;
   --text-tertiary: #9CA3AF;
   --text-inverse: #FFFFFF;
-  --border-light: #E5E7EB;
-  --border-medium: #D1D5DB;
+  --border-light: rgba(255, 255, 255, 0.6);
+  --border-medium: rgba(255, 255, 255, 0.3);
+
+  /* Glassmorphism Tokens */
+  --glass-bg: rgba(255, 255, 255, 0.35);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.5);
+  --glass-blur: blur(16px);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.7), inset 0 -1px 0 rgba(255, 255, 255, 0.1), inset 0 0 24px 12px rgba(255, 255, 255, 0.3);
 
   /* Category Colors */
   --cat-photography: #1A6FEF;
@@ -148,11 +161,11 @@ ul, ol { list-style: none; }
   --space-16: 4rem;     /* 64px */
 
   /* Border Radius */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 20px;
-  --radius-2xl: 28px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --radius-2xl: 32px;
   --radius-full: 9999px;
 
   /* Shadows */
@@ -221,7 +234,7 @@ ul, ol { list-style: none; }
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
-  padding-bottom: calc(var(--nav-height) + var(--safe-bottom));
+  padding-bottom: calc(var(--nav-height) + var(--safe-bottom) + var(--space-8));
 }
 
 /* ---------- Keyframe Animations ---------- */
@@ -477,4 +490,24 @@ ul, ol { list-style: none; }
 
 .toast-exit {
   animation: fadeIn 0.3s var(--ease-out) reverse forwards;
+}
+
+/* ---------- Responsive (Desktop) ---------- */
+@media (min-width: 768px) {
+  .app {
+    max-width: 480px;
+    margin: 0 auto;
+    position: relative;
+    background: var(--bg-app);
+    box-shadow: 0 24px 64px rgba(0,0,0,0.15);
+    border-left: 1px solid var(--border-light);
+    border-right: 1px solid var(--border-light);
+    overflow: hidden;
+  }
+
+  .toast-container {
+    max-width: 480px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
 }

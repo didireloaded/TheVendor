@@ -7,6 +7,7 @@ import { renderDashboardLeads } from './screens/dashboard/leads.js';
 import { renderDashboardAnalytics } from './screens/dashboard/analytics.js';
 import { renderDashboardManage } from './screens/dashboard/manage.js';
 import { refreshIcons } from './app.js';
+import { supabase } from './lib/supabase.js';
 
 const state = {
   currentScreen: 'home'
@@ -38,13 +39,30 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-export function enterDashboardMode() {
+export async function enterDashboardMode() {
   document.getElementById('app').classList.add('hidden');
   document.getElementById('dashboard-app').classList.remove('hidden');
   
   // Set theme color for dashboard
   document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff');
   
+  // Fetch logged in vendor data
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session) {
+    const { data: vendor } = await supabase.from('vendors').select('*').eq('user_id', session.user.id).single();
+    if (vendor) {
+      document.getElementById('dash-header-name').textContent = vendor.businessName;
+      document.getElementById('dash-header-logo').textContent = vendor.logoInitials || vendor.businessName.substring(0, 1).toUpperCase();
+      if (vendor.verificationStatus === 'verified') {
+         document.getElementById('dash-header-verified').classList.remove('hidden');
+      }
+    } else {
+      document.getElementById('dash-header-name').textContent = 'Unregistered Vendor';
+    }
+  } else {
+    document.getElementById('dash-header-name').textContent = 'Guest';
+  }
+
   navigateDashboard('home');
 }
 

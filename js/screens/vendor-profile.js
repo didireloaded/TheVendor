@@ -4,7 +4,9 @@
 
 import { getVendorById, VENDORS } from '../data.js';
 import { supabase } from '../lib/supabase.js';
-import { toggleFavorite, isFavorite, icons, openBottomSheet, showToast } from '../app.js';
+import { toggleFavorite, isFavorite, icons, openBottomSheet, showToast, closeBottomSheet, refreshIcons } from '../app.js';
+import { renderChatConversation } from './chat-conversation.js';
+import { escapeHtml, escapeAttr, safeCssColor } from '../lib/sanitize.js';
 
 export function renderVendorProfile(vendorId) {
   const vendor = getVendorById(vendorId);
@@ -13,6 +15,9 @@ export function renderVendorProfile(vendorId) {
   const overlay = document.getElementById('vendor-profile-overlay');
   const fav = isFavorite(vendor.id);
   const today = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][new Date().getDay()];
+  const vendorSeed = encodeURIComponent(vendor.id || 'vendor');
+  const vendorLogoGradient = safeCssColor(vendor.logoGradient);
+  const vendorName = escapeHtml(vendor.name);
 
   // Smart Recommendations: same category, sort by rating and distance
   const related = VENDORS
@@ -23,80 +28,63 @@ export function renderVendorProfile(vendorId) {
     })
     .slice(0, 4);
 
-  // Generate mock stats based on vendor properties
-  const responseTime = vendor.rating > 4.7 ? '< 1 hour' : '1-3 hours';
-  const completedJobs = Math.floor(vendor.reviewCount * 2.5) + '+';
-  const yearsActive = vendor.rating > 4.5 ? '5 Years' : '2 Years';
-  const verifiedSince = vendor.verified ? '2024' : 'N/A';
-
   overlay.innerHTML = `
-    <!-- Cover -->
-    <div class="profile-cover" style="background: linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.6)), url('https://picsum.photos/seed/${vendor.id}-cover/800/400') center/cover;">
-      <button class="profile-back-btn" id="profile-back">${icons.arrowLeft}</button>
-      <button class="profile-share-btn">${icons.share}</button>
-    </div>
-
-    <!-- Info -->
-    <div class="profile-info-section">
-      <div class="profile-logo" style="background: ${vendor.logoGradient};">${vendor.logoInitials}</div>
-      <h1 class="profile-name">
-        ${vendor.name}
-        ${vendor.verified ? `<span class="badge-verified ${vendor.verifiedLevel}">${icons.verifiedBadge}</span>` : ''}
-      </h1>
-      <p class="profile-category">${vendor.categoryName}</p>
-      
-      <div class="profile-stats">
-        <span class="stat-item">
-          <span style="color: var(--gold-400);">${icons.star}</span>
-          <strong>${vendor.rating}</strong>
-          <span style="color: var(--text-tertiary);">(${vendor.reviewCount} reviews)</span>
-        </span>
-        <span class="stat-item">
-          ${icons.location}
-          ${vendor.distance}km
-        </span>
-        <span class="badge-pill ${vendor.isOpen ? 'badge-open' : 'badge-closed'}">
-          ${vendor.isOpen ? '● Open Now' : '● Closed'}
-        </span>
+    <div class="vendor-profile-header">
+      <div class="vendor-hero" style="background: linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.7)), url('https://picsum.photos/seed/${vendorSeed}-cover/800/400') center/cover;">
+        <button class="profile-action-btn" id="profile-back" style="position: absolute; top: var(--space-4); left: var(--space-4);">
+          <i data-lucide="arrow-left"></i>
+        </button>
+        <button class="profile-action-btn" id="profile-share" style="position: absolute; top: var(--space-4); right: var(--space-4);">
+          <i data-lucide="share-2"></i>
+        </button>
+        <button class="profile-action-btn card-favorite ${fav ? 'active' : ''}" data-fav-id="${escapeAttr(vendor.id)}" style="position: absolute; top: var(--space-4); right: calc(var(--space-4) * 2 + 40px);">
+          <i data-lucide="heart"></i>
+        </button>
+        
+        <div class="vendor-hero-content">
+          <div class="vendor-hero-logo" style="background: ${vendorLogoGradient};">${escapeHtml(vendor.logoInitials)}</div>
+          <div>
+            <h1 class="vendor-hero-name">
+              ${vendorName}
+              ${vendor.verified ? `<span class="badge-verified ${escapeAttr(vendor.verifiedLevel)}" style="margin-left: 8px;">${icons.verifiedBadge}</span>` : ''}
+            </h1>
+            <p class="vendor-hero-category">${escapeHtml(vendor.categoryName)} • ${escapeHtml(vendor.distance)}km away</p>
+          </div>
+        </div>
       </div>
 
       <!-- Hero Trust Indicators -->
       <div class="vendor-hero-stats">
         <div class="vendor-hero-stat">
-          <div class="vendor-hero-stat-icon"><i data-lucide="clock"></i></div>
+          <div class="vendor-hero-stat-icon"><i data-lucide="star"></i></div>
           <div class="vendor-hero-stat-info">
-            <span class="vendor-hero-stat-val">${responseTime}</span>
-            <span class="vendor-hero-stat-label">Response Time</span>
+            <span class="vendor-hero-stat-val">${escapeHtml(vendor.rating)}</span>
+            <span class="vendor-hero-stat-label">Rating</span>
           </div>
         </div>
         <div class="vendor-hero-stat">
-          <div class="vendor-hero-stat-icon"><i data-lucide="check-circle-2"></i></div>
+          <div class="vendor-hero-stat-icon"><i data-lucide="message-square"></i></div>
           <div class="vendor-hero-stat-info">
-            <span class="vendor-hero-stat-val">${completedJobs}</span>
-            <span class="vendor-hero-stat-label">Jobs Done</span>
+            <span class="vendor-hero-stat-val">${escapeHtml(vendor.reviewCount)}</span>
+            <span class="vendor-hero-stat-label">Reviews</span>
           </div>
         </div>
-        <div class="vendor-hero-stat">
-          <div class="vendor-hero-stat-icon"><i data-lucide="calendar"></i></div>
-          <div class="vendor-hero-stat-info">
-            <span class="vendor-hero-stat-val">${yearsActive}</span>
-            <span class="vendor-hero-stat-label">Years Active</span>
-          </div>
-        </div>
+        ${vendor.verified ? `
         <div class="vendor-hero-stat">
           <div class="vendor-hero-stat-icon"><i data-lucide="shield-check"></i></div>
           <div class="vendor-hero-stat-info">
-            <span class="vendor-hero-stat-val">${verifiedSince}</span>
-            <span class="vendor-hero-stat-label">Verified Since</span>
+            <span class="vendor-hero-stat-val">Verified</span>
+            <span class="vendor-hero-stat-label">Business</span>
           </div>
         </div>
+        ` : ''}
       </div>
     </div>
 
     <!-- About -->
     <div class="profile-section">
       <h2 class="profile-section-title">About</h2>
-      <p class="profile-about">${vendor.description}</p>
+      <p class="profile-about">${escapeHtml(vendor.description)}</p>
     </div>
 
     <!-- Gallery -->
@@ -104,7 +92,7 @@ export function renderVendorProfile(vendorId) {
       <h2 class="profile-section-title">Portfolio</h2>
       <div class="profile-gallery">
         ${[1,2,3,4,5,6].map(i => `
-          <div class="gallery-item" style="background: url('https://picsum.photos/seed/${vendor.id}-gal${i}/400/300') center/cover;"></div>
+          <div class="gallery-item" style="background: url('https://picsum.photos/seed/${vendorSeed}-gal${i}/400/300') center/cover;"></div>
         `).join('')}
       </div>
     </div>
@@ -114,11 +102,11 @@ export function renderVendorProfile(vendorId) {
       <h2 class="profile-section-title">Services</h2>
       ${vendor.services.map(s => `
         <div class="service-card">
-          <div class="service-image" style="background: linear-gradient(135deg, ${s.color}, ${s.color}cc);"></div>
+          <div class="service-image" style="background: ${safeCssColor(s.color, vendorLogoGradient)};"></div>
           <div class="service-info">
-            <h3 class="service-name">${s.name}</h3>
-            <p class="service-desc">${s.description}</p>
-            <span class="service-price">${s.price}</span>
+            <h3 class="service-name">${escapeHtml(s.name)}</h3>
+            <p class="service-desc">${escapeHtml(s.description)}</p>
+            <span class="service-price">${escapeHtml(s.price)}</span>
           </div>
         </div>
       `).join('')}
@@ -126,14 +114,14 @@ export function renderVendorProfile(vendorId) {
 
     <!-- Reviews -->
     <div class="profile-section">
-      <h2 class="profile-section-title">Reviews (${vendor.reviewCount})</h2>
+      <h2 class="profile-section-title">Reviews (${escapeHtml(vendor.reviewCount)})</h2>
       ${vendor.reviews.map(r => `
         <div class="review-card">
           <div class="review-header">
-            <div class="avatar avatar-md" style="background: ${r.avatarColor};">${r.avatar}</div>
+            <div class="avatar avatar-md" style="background: ${safeCssColor(r.avatarColor)};">${escapeHtml(r.avatar)}</div>
             <div class="review-author">
-              <div class="author-name">${r.author}</div>
-              <div class="review-date">${r.date}</div>
+              <div class="author-name">${escapeHtml(r.author)}</div>
+              <div class="review-date">${escapeHtml(r.date)}</div>
             </div>
             <div class="review-stars">
               ${Array.from({ length: 5 }, (_, i) => i < r.rating
@@ -142,16 +130,16 @@ export function renderVendorProfile(vendorId) {
               ).join('')}
             </div>
           </div>
-          <p class="review-text">${r.text}</p>
+          <p class="review-text">${escapeHtml(r.text)}</p>
           ${r.hasPhotos ? `
             <div class="review-photos">
-              ${[1,2].map(i => `<div class="review-photo" style="background: url('https://picsum.photos/seed/${vendor.id}-rev${i}/200/200') center/cover;"></div>`).join('')}
+              ${[1,2].map(i => `<div class="review-photo" style="background: url('https://picsum.photos/seed/${vendorSeed}-rev${i}/200/200') center/cover;"></div>`).join('')}
             </div>
           ` : ''}
           ${r.reply ? `
             <div class="review-reply">
               <div class="reply-label">Owner Response</div>
-              <p class="reply-text">${r.reply}</p>
+              <p class="reply-text">${escapeHtml(r.reply)}</p>
             </div>
           ` : ''}
         </div>
@@ -165,8 +153,8 @@ export function renderVendorProfile(vendorId) {
       <div class="hours-list">
         ${Object.entries(vendor.hours).map(([day, time]) => `
           <div class="hours-item ${day === today ? 'today' : ''}">
-            <span class="hours-day">${day.charAt(0).toUpperCase() + day.slice(1)}</span>
-            <span class="hours-time">${time}</span>
+            <span class="hours-day">${escapeHtml(day.charAt(0).toUpperCase() + day.slice(1))}</span>
+            <span class="hours-time">${escapeHtml(time)}</span>
           </div>
         `).join('')}
       </div>
@@ -175,12 +163,12 @@ export function renderVendorProfile(vendorId) {
     <!-- Location -->
     <div class="profile-section">
       <h2 class="profile-section-title">Location</h2>
-      <div style="background: url('https://picsum.photos/seed/${vendor.id}-map/600/300') center/cover; border-radius: var(--radius-lg); height: 160px; display: flex; align-items: center; justify-content: center; position: relative; margin-bottom: var(--space-3);">
+      <div style="background: url('https://picsum.photos/seed/${vendorSeed}-map/600/300') center/cover; border-radius: var(--radius-lg); height: 160px; display: flex; align-items: center; justify-content: center; position: relative; margin-bottom: var(--space-3);">
         <div style="background: white; padding: 4px 12px; border-radius: 100px; font-size: var(--text-sm); font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
-          ${icons.location} ${vendor.address}
+          ${icons.location} ${escapeHtml(vendor.address)}
         </div>
       </div>
-      <button class="btn btn-secondary btn-full" onclick="window.open('https://maps.google.com/?q=${vendor.lat},${vendor.lng}')">
+      <button class="btn btn-secondary btn-full" data-profile-action="directions">
         ${icons.directions} Get Directions
       </button>
     </div>
@@ -191,18 +179,18 @@ export function renderVendorProfile(vendorId) {
         <h2 class="profile-section-title">Similar Vendors</h2>
         <div class="similar-vendors-scroll">
         ${related.map(v => `
-          <div class="similar-vendor-card" data-related-id="${v.id}">
-            <div class="similar-vendor-cover" style="background: linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.5)), url('https://picsum.photos/seed/${v.id}-cover/400/300') center/cover;">
-              <div class="similar-vendor-logo" style="background: ${v.logoGradient};">${v.logoInitials}</div>
+          <div class="similar-vendor-card" data-related-id="${escapeAttr(v.id)}">
+            <div class="similar-vendor-cover" style="background: linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.5)), url('https://picsum.photos/seed/${encodeURIComponent(v.id || 'vendor')}-cover/400/300') center/cover;">
+              <div class="similar-vendor-logo" style="background: ${safeCssColor(v.logoGradient)};">${escapeHtml(v.logoInitials)}</div>
             </div>
             <div class="similar-vendor-info">
               <div class="similar-vendor-name">
-                ${v.name}
-                ${v.verified ? `<span class="badge-verified ${v.verifiedLevel}" style="transform: scale(0.8);">${icons.verifiedBadge}</span>` : ''}
+                ${escapeHtml(v.name)}
+                ${v.verified ? `<span class="badge-verified ${escapeAttr(v.verifiedLevel)}" style="transform: scale(0.8);">${icons.verifiedBadge}</span>` : ''}
               </div>
               <div class="similar-vendor-meta">
-                <span style="color: var(--gold-500);"><i data-lucide="star"></i> ${v.rating}</span>
-                <span><i data-lucide="map-pin"></i> ${v.distance}km</span>
+                <span style="color: var(--gold-500);"><i data-lucide="star"></i> ${escapeHtml(v.rating)}</span>
+                <span><i data-lucide="map-pin"></i> ${escapeHtml(v.distance)}km</span>
               </div>
             </div>
           </div>
@@ -216,13 +204,13 @@ export function renderVendorProfile(vendorId) {
 
     <!-- Floating Action Bar -->
     <div class="fab-bar-container">
-      <button class="fab-btn" onclick="window.open('tel:${vendor.phone}')">
+      <button class="fab-btn" data-profile-action="call">
         <i data-lucide="phone"></i> Call
       </button>
-      <button class="fab-btn" onclick="window.open('https://wa.me/${vendor.whatsapp}')">
+      <button class="fab-btn" data-profile-action="whatsapp">
         <i data-lucide="message-circle"></i> Chat
       </button>
-      <button class="fab-btn" onclick="window.open('https://maps.google.com/?q=${vendor.lat},${vendor.lng}')">
+      <button class="fab-btn" data-profile-action="route">
         <i data-lucide="navigation"></i> Route
       </button>
       <button class="fab-btn primary" id="profile-quote-btn">
@@ -234,22 +222,36 @@ export function renderVendorProfile(vendorId) {
   overlay.classList.remove('hidden');
   overlay.scrollTop = 0;
 
-  // Render newly added Lucide icons
-  import('../app.js').then(module => {
-    if (module.refreshIcons) module.refreshIcons();
-  });
+  refreshIcons();
 
   // Events
   document.getElementById('profile-back')?.addEventListener('click', closeVendorProfile);
+
+  overlay.querySelectorAll('[data-profile-action]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const action = btn.dataset.profileAction;
+      if (action === 'call') {
+        const phone = phoneDigits(vendor.phone);
+        if (phone) window.open(`tel:${phone}`);
+      }
+      if (action === 'whatsapp') {
+        const phone = phoneDigits(vendor.whatsapp || vendor.phone);
+        if (phone) window.open(`https://wa.me/${phone}`);
+      }
+      if (action === 'directions' || action === 'route') {
+        window.open(`https://maps.google.com/?q=${mapQueryFor(vendor)}`);
+      }
+    });
+  });
 
   // Quote button
   document.getElementById('profile-quote-btn')?.addEventListener('click', () => {
     openBottomSheet(`
       <div class="quote-header">
-        <div class="quote-vendor-logo" style="background: ${vendor.logoGradient};">${vendor.logoInitials}</div>
+        <div class="quote-vendor-logo" style="background: ${vendorLogoGradient};">${escapeHtml(vendor.logoInitials)}</div>
         <div>
           <h3 class="bottom-sheet-title" style="margin-bottom: 2px;">Request a Quote</h3>
-          <p class="quote-vendor-name">from ${vendor.name}</p>
+          <p class="quote-vendor-name">from ${vendorName}</p>
         </div>
       </div>
       
@@ -259,8 +261,8 @@ export function renderVendorProfile(vendorId) {
           <div class="quote-service-chips">
             ${vendor.services.map(s => `
               <label class="quote-chip">
-                <input type="radio" name="quote_service" value="${s.name}">
-                <span>${s.name}</span>
+                <input type="radio" name="quote_service" value="${escapeAttr(s.name)}">
+                <span>${escapeHtml(s.name)}</span>
               </label>
             `).join('')}
             <label class="quote-chip">
@@ -318,7 +320,7 @@ export function renderVendorProfile(vendorId) {
         </div>
 
         <div class="quote-footer">
-          <p class="quote-disclaimer"><i data-lucide="shield-check" style="width: 14px; height: 14px; vertical-align: middle;"></i> Secure request. Vendors usually respond within ${responseTime}.</p>
+          <p class="quote-disclaimer"><i data-lucide="shield-check" style="width: 14px; height: 14px; vertical-align: middle;"></i> Secure request.</p>
           <button class="btn btn-primary btn-full quote-submit-btn" id="quote-submit-btn">
             Send Quote Request
           </button>
@@ -346,14 +348,17 @@ export function renderVendorProfile(vendorId) {
         btn.textContent = 'Sending...';
         btn.disabled = true;
 
+        const isEmail = contact.includes('@');
+        const email = isEmail ? contact : null;
+        const phone = !isEmail ? contact : null;
+        const compiledDetails = `Service: ${service}\nLocation: ${location || 'N/A'}\nBudget: ${budget ? ('N$ ' + budget) : 'N/A'}\nMessage: ${msg || 'None'}`;
+
         const { error } = await supabase.from('leads').insert({
           vendor_id: vendor.id,
           customer_name: name,
-          customer_contact: contact,
-          location: location || '',
-          service_requested: service,
-          budget: budget ? ('N$ ' + budget) : 'Not specified',
-          message: msg || ''
+          customer_email: email,
+          customer_phone: phone,
+          details: compiledDetails
         });
 
         if (error) {
@@ -362,14 +367,35 @@ export function renderVendorProfile(vendorId) {
           btn.textContent = 'Send Quote Request';
           btn.disabled = false;
         } else {
-          document.getElementById('bottom-sheet-overlay').classList.add('hidden');
+          closeBottomSheet();
           showToast('Your quote request has been sent!', 'success');
+          
+          // Open Chat Conversation with System Quote Card
+          const mockConvData = {
+            id: 'conv_new_' + Date.now(),
+            vendorId: vendor.id,
+            vendorName: vendor.name,
+            logoInitials: vendor.logoInitials,
+            logoGradient: vendor.logoGradient,
+            verified: vendor.verified,
+            verifiedLevel: vendor.verifiedLevel,
+            lastMessage: 'I am looking for ' + service,
+            timestamp: 'Just now',
+            unreadCount: 0,
+            onlineStatus: 'online',
+            responseTime: 'Usually responds within 1 hour',
+            type: 'quote',
+            quoteDetails: {
+              service: service,
+              budget: budget ? ('N$' + budget) : 'Not specified',
+              date: document.getElementById('quote-date')?.value || 'TBD'
+            }
+          };
+          renderChatConversation(mockConvData);
         }
       });
       
-      import('../app.js').then(module => {
-          if (module.refreshIcons) module.refreshIcons();
-      });
+      refreshIcons();
     }, 50);
   });
 
@@ -387,6 +413,19 @@ export function renderVendorProfile(vendorId) {
       toggleFavorite(btn.dataset.favId);
     });
   });
+}
+
+function phoneDigits(value) {
+  return String(value || '').replace(/\D/g, '');
+}
+
+function mapQueryFor(vendor) {
+  const lat = Number(vendor.lat);
+  const lng = Number(vendor.lng);
+  if (Number.isFinite(lat) && Number.isFinite(lng)) {
+    return `${lat},${lng}`;
+  }
+  return encodeURIComponent(vendor.address || vendor.name || 'Namibia');
 }
 
 export function closeVendorProfile() {
