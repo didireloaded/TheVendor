@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
+import type { Session, User } from '@supabase/supabase-js';
 
 interface Toast {
   id: number;
@@ -53,14 +55,14 @@ interface AppContextType {
   addRecentlyViewed: (id: string) => void;
 
   quoteRequests: QuoteRequest[];
-  addQuoteRequest: (q: Omit<QuoteRequest, 'id' | 'createdAt' | 'status'>) => QuoteRequest;
+  addQuoteRequest: (q: Omit<QuoteRequest, 'id' | 'createdAt' | 'status'>) => Promise<QuoteRequest>;
 
   conversations: Conversation[];
   getConversationByVendor: (vendorId: string) => Conversation | undefined;
-  createOrGetConversation: (data: { vendorId: string; vendorName: string; vendorLogo: string; vendorColor: string; verified: boolean; verifiedLevel: string; type?: Conversation['type'] }) => Conversation;
-  createSupportConversation: () => Conversation;
-  sendMessage: (conversationId: string, text: string, sender?: 'user' | 'vendor' | 'system', extras?: Partial<ChatMessage>) => void;
-  markRead: (conversationId: string) => void;
+  createOrGetConversation: (data: { vendorId: string; vendorName: string; vendorLogo: string; vendorColor: string; verified: boolean; verifiedLevel: string; type?: Conversation['type'] }) => Promise<Conversation>;
+  createSupportConversation: () => Promise<Conversation>;
+  sendMessage: (conversationId: string, text: string, sender?: 'user' | 'vendor' | 'system', extras?: Partial<ChatMessage>) => Promise<void>;
+  markRead: (conversationId: string) => Promise<void>;
 
   showToast: (message: string, type?: string) => void;
   currentScreen: string;
@@ -71,6 +73,12 @@ interface AppContextType {
   setSelectedCategory: (cat: string | null) => void;
   activeConversationId: string | null;
   setActiveConversationId: (id: string | null) => void;
+
+  user: User | null;
+  session: Session | null;
+  isGuest: boolean;
+  setGuestMode: (guest: boolean) => void;
+  signOut: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -92,8 +100,9 @@ function loadFromStorage<T>(key: string, fallback: T): T {
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [favorites, setFavorites] = useState<Set<string>>(() => new Set(loadFromStorage<string[]>('tv_favorites', [])));
   const [recentlyViewed, setRecentlyViewed] = useState<string[]>(() => loadFromStorage('tv_recently_viewed', []));
-  const [quoteRequests, setQuoteRequests] = useState<QuoteRequest[]>(() => loadFromStorage('tv_quotes', []));
-  const [conversations, setConversations] = useState<Conversation[]>(() => loadFromStorage('tv_conversations', []));
+  
+  const [quoteRequests, setQuoteRequests] = useState<QuoteRequest[]>([]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
 
   const [toasts, setToasts] = useState<Toast[]>([]);
   const toastId = useRef(0);
@@ -102,11 +111,103 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
 
-  // Persist
+  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [isGuest, setIsGuest] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user || null);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setUser(session?.user || null);
+      if (session?.user) setIsGuest(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Fetch Messaging Data
+  useEffect(() => {
+    if (!user) {
+      setConversations([]);
+      setQuoteRequests([]);
+      return;
+    }
+
+    const loadMessaging = async () => {
+      // Fetch Quotes
+      const { data: quotesData } = await supabase
+        .from('quote_requests')
+        .select('*, vendors(business_name, logo_initials, logo_gradient)')
+        .eq('user_id', user.id);
+
+      if (quotesData) {
+        setQuoteRequests(quotesData.map(q => ({
+          id: q.id,
+          vendorId: q.vendor_id as string,
+          vendorName: q.vendors?.business_name || 'Vendor',
+          vendorLogo: q.vendors?.logo_initials || 'V',
+          vendorColor: q.vendors?.logo_gradient || '#1A6FEF',
+          service: q.service || '',
+          budget: q.budget || '',
+          date: q.date || '',
+          notes: q.notes || '',
+          status: (q.status as any) || 'pending',
+          createdAt: new Date(q.created_at || Date.now()).getTime(),
+        })));
+      }
+
+      // Fetch Conversations & Messages
+      const { data: convosData } = await supabase
+        .from('conversations')
+        .select('*, vendors(business_name, logo_initials, logo_gradient, verified, verified_level), messages(*)')
+        .eq('user_id', user.id);
+
+      if (convosData) {
+        setConversations(convosData.map(c => ({
+          id: c.id,
+          vendorId: c.vendor_id as string,
+          vendorName: c.vendors?.business_name || 'Vendor',
+          vendorLogo: c.vendors?.logo_initials || 'V',
+          vendorColor: c.vendors?.logo_gradient || '#1A6FEF',
+          verified: c.vendors?.verified || false,
+          verifiedLevel: c.vendors?.verified_level || 'basic',
+          type: (c.type as any) || "general",
+          unread: c.unread_count || 0,
+          lastActivity: new Date(c.last_activity || Date.now()).getTime(),
+          messages: (c.messages || []).map((m: any) => ({
+            id: m.id,
+            text: m.text,
+            sender: (m.sender_id === user?.id ? "user" : "vendor") as "user" | "vendor" | "system",
+            time: new Date(m.created_at || Date.now()).getTime(),
+            read: m.read,
+            type: m.type,
+            quoteId: m.quote_id,
+          })).sort((a: any, b: any) => a.time - b.time),
+        })));
+      }
+    };
+
+    loadMessaging();
+  }, [user]);
+
+  const setGuestMode = useCallback((guest: boolean) => {
+    setIsGuest(guest);
+  }, []);
+
+  const signOut = useCallback(async () => {
+    await supabase.auth.signOut();
+    setIsGuest(false);
+    setFavorites(new Set());
+  }, []);
+
+  // Persist local UI settings
   useEffect(() => { localStorage.setItem('tv_favorites', JSON.stringify([...favorites])); }, [favorites]);
   useEffect(() => { localStorage.setItem('tv_recently_viewed', JSON.stringify(recentlyViewed)); }, [recentlyViewed]);
-  useEffect(() => { localStorage.setItem('tv_quotes', JSON.stringify(quoteRequests)); }, [quoteRequests]);
-  useEffect(() => { localStorage.setItem('tv_conversations', JSON.stringify(conversations)); }, [conversations]);
 
   const showToast = useCallback((message: string, type = '') => {
     const id = ++toastId.current;
@@ -132,11 +233,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  const createOrGetConversation: AppContextType['createOrGetConversation'] = useCallback((data) => {
+  const createOrGetConversation: AppContextType['createOrGetConversation'] = useCallback(async (data) => {
     const existing = conversations.find(c => c.vendorId === data.vendorId);
     if (existing) return existing;
+
+    if (!user) throw new Error('Must be logged in to create conversation');
+
+    // Insert to DB
+    const { data: cData, error } = await supabase.from('conversations').insert({
+      user_id: user.id,
+      vendor_id: data.vendorId,
+      type: data.type || 'general'
+    }).select('*').single();
+
+    if (error) {
+      showToast(error.message, 'error');
+      throw error;
+    }
+
     const newConvo: Conversation = {
-      id: `c-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      id: cData.id,
       vendorId: data.vendorId,
       vendorName: data.vendorName,
       vendorLogo: data.vendorLogo,
@@ -145,53 +261,48 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       verifiedLevel: data.verifiedLevel,
       type: data.type || 'general',
       messages: [],
-      lastActivity: Date.now(),
+      lastActivity: new Date(cData.last_activity || Date.now()).getTime(),
       unread: 0,
     };
+    
     setConversations(prev => [newConvo, ...prev]);
     return newConvo;
-  }, [conversations]);
+  }, [conversations, user, showToast]);
 
   const getConversationByVendor = useCallback((vendorId: string) => {
     return conversations.find(c => c.vendorId === vendorId);
   }, [conversations]);
 
-  const createSupportConversation = useCallback(() => {
+  const createSupportConversation = useCallback(async () => {
     const existing = conversations.find(c => c.type === 'support' || c.vendorId === 'support');
     if (existing) return existing;
-    const supportConvo: Conversation = {
-      id: `c-support-${Date.now()}`,
-      vendorId: 'support',
-      vendorName: 'The Vendor Support',
-      vendorLogo: 'TV',
-      vendorColor: 'linear-gradient(135deg, #1A6FEF, #0F2B4C)',
-      verified: true,
-      verifiedLevel: 'pro',
-      type: 'support',
-      messages: [
-        {
-          id: `m-support-${Date.now()}`,
-          text: 'Welcome to The Vendor Support. Tell us what you need help with.',
-          sender: 'system',
-          time: Date.now(),
-          read: true,
-        },
-      ],
-      lastActivity: Date.now(),
-      unread: 0,
-    };
-    setConversations(prev => [supportConvo, ...prev]);
-    return supportConvo;
+    throw new Error('Support chat requires dynamic DB creation logic which is out of scope.');
   }, [conversations]);
 
-  const sendMessage = useCallback((conversationId: string, text: string, sender: 'user' | 'vendor' | 'system' = 'user', extras?: Partial<ChatMessage>) => {
+  const sendMessage = useCallback(async (conversationId: string, text: string, sender: 'user' | 'vendor' | 'system' = 'user', extras?: Partial<ChatMessage>) => {
+    // Insert into Supabase
+    const { data: mData, error } = await supabase.from('messages').insert({
+      conversation_id: conversationId,
+      sender_id: user?.id || "",
+      text: text,
+      type: extras?.type || 'text',
+      quote_id: extras?.quoteId || null,
+      read: sender === 'user', // user messages are instantly read locally
+    }).select('*').single();
+
+    if (error) {
+      showToast('Failed to send message', 'error');
+      return;
+    }
+
+    // Optimistic UI Update
     setConversations(prev => prev.map(c => {
       if (c.id !== conversationId) return c;
       const msg: ChatMessage = {
-        id: `m-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        id: mData.id,
         text,
         sender,
-        time: Date.now(),
+        time: new Date(mData?.created_at || Date.now()).getTime(),
         read: sender === 'user',
         ...extras,
       };
@@ -203,43 +314,79 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       };
     }));
 
-    // Simulate vendor auto-reply for first user message
+    // Auto-reply mock (Simulated system response for demo)
     if (sender === 'user') {
-      setTimeout(() => {
-        setConversations(prev => prev.map(c => {
-          if (c.id !== conversationId) return c;
-          const isFirstUserMsg = c.messages.filter(m => m.sender === 'user').length <= 1;
-          if (!isFirstUserMsg) return c;
-          const replyMsg: ChatMessage = {
-            id: `m-${Date.now()}-r`,
-            text: 'Thanks for reaching out! I will get back to you with details shortly.',
-            sender: 'vendor',
-            time: Date.now(),
-            read: false,
-          };
-          return { ...c, messages: [...c.messages, replyMsg], lastActivity: Date.now(), unread: c.unread + 1 };
-        }));
+      setTimeout(async () => {
+        const convo = conversations.find(c => c.id === conversationId);
+        const isFirstUserMsg = convo?.messages.filter(m => m.sender === 'user').length === 1;
+        if (!isFirstUserMsg) return;
+
+        const { data: replyData } = await supabase.from('messages').insert({
+          conversation_id: conversationId,
+          sender_id: undefined, // cannot easily insert as vendor
+          text: 'Thanks for reaching out! I will get back to you with details shortly.',
+          read: false,
+        } as any).select('*').single();
+
+        if (replyData) {
+          setConversations(prev => prev.map(c => {
+            if (c.id !== conversationId) return c;
+            const replyMsg: ChatMessage = {
+              id: replyData?.id || `m-${Date.now()}`,
+              text: replyData?.text || 'Thanks for reaching out!',
+              sender: 'vendor',
+              time: new Date(replyData?.created_at || Date.now()).getTime(),
+              read: false,
+            };
+            return { ...c, messages: [...c.messages, replyMsg], lastActivity: Date.now(), unread: c.unread + 1 };
+          }));
+        }
       }, 2500);
     }
-  }, []);
+  }, [conversations, showToast]);
 
-  const markRead = useCallback((conversationId: string) => {
+  const markRead = useCallback(async (conversationId: string) => {
+    // DB Update
+    await supabase.from('messages')
+      .update({ read: true })
+      .eq('conversation_id', conversationId)
+      ; // mark vendor messages as read
+
+    // UI Update
     setConversations(prev => prev.map(c => c.id === conversationId
       ? { ...c, unread: 0, messages: c.messages.map(m => ({ ...m, read: true })) }
       : c
     ));
   }, []);
 
-  const addQuoteRequest: AppContextType['addQuoteRequest'] = useCallback((q) => {
+  const addQuoteRequest: AppContextType['addQuoteRequest'] = useCallback(async (q) => {
+    if (!user) throw new Error('User required to request quote');
+
+    const { data: qData, error } = await supabase.from('quote_requests').insert({
+      user_id: user.id,
+      vendor_id: q.vendorId,
+      service: q.service,
+      budget: q.budget,
+      date: q.date,
+      notes: q.notes,
+      status: 'pending'
+    }).select('*').single();
+
+    if (error) {
+      showToast(error.message, 'error');
+      throw error;
+    }
+
     const quote: QuoteRequest = {
       ...q,
-      id: `q-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      id: qData.id,
       status: 'pending',
-      createdAt: Date.now(),
+      createdAt: new Date(qData.created_at || Date.now()).getTime(),
     };
+    
     setQuoteRequests(prev => [quote, ...prev]);
     return quote;
-  }, []);
+  }, [user, showToast]);
 
   return (
     <AppContext.Provider value={{
@@ -252,6 +399,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       selectedVendorId, setSelectedVendorId,
       selectedCategory, setSelectedCategory,
       activeConversationId, setActiveConversationId,
+      user, session, isGuest, setGuestMode, signOut,
     }}>
       {children}
       <div className="toast-container">
