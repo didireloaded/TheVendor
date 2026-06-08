@@ -117,22 +117,22 @@ CREATE TABLE IF NOT EXISTS public.vendor_health_score (
 );
 
 -- 11. Add REALTIME publications
--- First drop existing if needed to avoid duplicate errors, then add the tables
-begin;
-  -- Remove the supabase_realtime publication if it exists to recreate it cleanly (optional, but safer to just add tables)
-  -- The default publication is usually 'supabase_realtime'
-  
-  -- Add new tables to the publication
-  ALTER PUBLICATION supabase_realtime ADD TABLE public.quote_requests;
-  ALTER PUBLICATION supabase_realtime ADD TABLE public.bookings;
-  ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;
-  ALTER PUBLICATION supabase_realtime ADD TABLE public.reviews;
-  ALTER PUBLICATION supabase_realtime ADD TABLE public.opportunity_applications;
-  ALTER PUBLICATION supabase_realtime ADD TABLE public.analytics_events;
-  
-  -- Ensure messages is in realtime if it wasn't already
-  ALTER PUBLICATION supabase_realtime ADD TABLE public.messages;
-commit;
+DO $$
+DECLARE
+    t text;
+BEGIN
+    FOR t IN 
+        SELECT unnest(ARRAY['quote_requests', 'bookings', 'notifications', 'reviews', 'opportunity_applications', 'analytics_events', 'messages'])
+    LOOP
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_publication_tables 
+            WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = t
+        ) THEN
+            EXECUTE format('ALTER PUBLICATION supabase_realtime ADD TABLE public.%I;', t);
+        END IF;
+    END LOOP;
+END
+$$;
 
 -- Enable REPLICA IDENTITY FULL for these tables so realtime sends complete previous records on UPDATE/DELETE
 ALTER TABLE public.quote_requests REPLICA IDENTITY FULL;

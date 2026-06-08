@@ -5,7 +5,20 @@ import {
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
-const PENDING_VENDORS: any[] = [];
+const PENDING_VENDORS = [
+  {
+    id: 'p1', businessName: 'Swakop Surf School', category: 'Events & Sports',
+    address: 'Swakopmund Beach, Namibia',
+    description: 'Learn to surf with certified instructors on the Atlantic coast.',
+    logoGradient: 'linear-gradient(135deg, #06B6D4, #0E7490)', logoInitials: 'SS',
+  },
+  {
+    id: 'p2', businessName: 'Kalahari Pottery', category: 'Fashion & Design',
+    address: 'Keetmanshoop, Namibia',
+    description: 'Handcrafted pottery inspired by the Kalahari Desert.',
+    logoGradient: 'linear-gradient(135deg, #B45309, #78350F)', logoInitials: 'KP',
+  },
+];
 
 const MAPBOX_TOKEN = (import.meta as any).env?.VITE_MAPBOX_TOKEN as string | undefined;
 const SUPABASE_URL = (import.meta as any).env?.VITE_SUPABASE_URL as string | undefined;

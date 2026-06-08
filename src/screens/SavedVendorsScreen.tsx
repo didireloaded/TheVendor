@@ -1,12 +1,10 @@
 import { Heart, Star, BadgeCheck, MessageCircle, Phone, MapPin, ArrowLeft } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { buildWhatsAppUrl, buildTelUrl } from '../data/vendors';
-import { useData } from '../context/DataContext';
+import { VENDORS, buildWhatsAppUrl, buildTelUrl } from '../data/vendors';
 
 export default function SavedVendorsScreen() {
-  const { vendors } = useData();
   const { favorites, setSelectedVendorId, setCurrentScreen, toggleFavorite, addRecentlyViewed } = useApp();
-  const savedVendors = vendors.filter(v => favorites.has(v.id));
+  const savedVendors = VENDORS.filter(v => favorites.has(v.id));
 
   return (
     <div className="pb-4">

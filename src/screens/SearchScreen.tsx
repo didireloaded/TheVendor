@@ -1,15 +1,13 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { Search, ArrowUpRight, TrendingUp, Clock, X, MapPin, Star, MessageCircle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { useData } from '../context/DataContext';
 import {
-  TRENDING_SEARCHES, POPULAR_NEAR_YOU, searchVendors, buildWhatsAppUrl,
+  TRENDING_SEARCHES, POPULAR_NEAR_YOU, searchVendors, CATEGORIES, VENDORS, buildWhatsAppUrl,
 } from '../data/vendors';
 import type { Vendor } from '../data/vendors';
 
 export default function SearchScreen() {
   const { setCurrentScreen, setSelectedVendorId, setSelectedCategory, addRecentlyViewed } = useApp();
-  const { vendors, categories: CATEGORIES } = useData();
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const [recentSearches, setRecentSearches] = useState<string[]>(() => {
@@ -22,11 +20,11 @@ export default function SearchScreen() {
   const results = useMemo(() => {
     if (query.length < 1) return { vendors: [] as Vendor[], categories: [] as typeof CATEGORIES, cities: [] as string[] };
     const q = query.toLowerCase();
-    const matchedVendors = searchVendors(vendors, query).slice(0, 10);
+    const vendors = searchVendors(query).slice(0, 10);
     const categories = CATEGORIES.filter(c => c.name.toLowerCase().includes(q)).slice(0, 4);
-    const cities = Array.from(new Set(vendors.filter(v => v.city.toLowerCase().includes(q)).map(v => v.city))).slice(0, 4);
-    return { vendors: matchedVendors, categories, cities };
-  }, [query, vendors, CATEGORIES]);
+    const cities = Array.from(new Set(VENDORS.filter(v => v.city.toLowerCase().includes(q)).map(v => v.city))).slice(0, 4);
+    return { vendors, categories, cities };
+  }, [query]);
 
   const addRecent = (text: string) => {
     const updated = [text, ...recentSearches.filter(s => s !== text)].slice(0, 8);

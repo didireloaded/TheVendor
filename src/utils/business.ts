@@ -1,4 +1,4 @@
-import { NAMIBIAN_CITIES, type Vendor } from '../data/vendors';
+import { NAMIBIAN_CITIES, VENDORS, type Vendor } from '../data/vendors';
 
 export interface CurrentLocation {
   label: string;
@@ -76,8 +76,8 @@ function toRad(value: number): number {
   return (value * Math.PI) / 180;
 }
 
-export function vendorsNear(vendors: Vendor[], location: CurrentLocation, radiusKm = 25): Array<Vendor & { computedDistance: number }> {
-  return vendors.map(vendor => ({
+export function vendorsNear(location: CurrentLocation, radiusKm = 25): Array<Vendor & { computedDistance: number }> {
+  return VENDORS.map(vendor => ({
     ...vendor,
     computedDistance: distanceKm(location.latitude, location.longitude, vendor.latitude, vendor.longitude),
   }))
@@ -157,23 +157,23 @@ export function trendingReason(vendor: Vendor): string {
   return 'Recently popular';
 }
 
-export function getTrendingThisWeek(vendors: Vendor[]): Vendor[] {
-  return [...vendors].sort((a, b) => trendingScore(b) - trendingScore(a)).slice(0, 8);
+export function getTrendingThisWeek(): Vendor[] {
+  return [...VENDORS].sort((a, b) => trendingScore(b) - trendingScore(a)).slice(0, 8);
 }
 
-export function getVendorOfTheWeek(vendors: Vendor[]): Vendor | undefined {
-  return [...vendors].filter(v => v.featured && v.verified).sort((a, b) => trendingScore(b) - trendingScore(a))[0] || vendors[0];
+export function getVendorOfTheWeek(): Vendor {
+  return [...VENDORS].filter(v => v.featured && v.verified).sort((a, b) => trendingScore(b) - trendingScore(a))[0] || VENDORS[0];
 }
 
-export function getRecommendedForUser(vendors: Vendor[], recentlyViewed: string[], saved: Set<string>, location: CurrentLocation): Vendor[] {
+export function getRecommendedForUser(recentlyViewed: string[], saved: Set<string>, location: CurrentLocation): Vendor[] {
   const viewedCategories = recentlyViewed
-    .map(id => vendors.find(v => v.id === id)?.category)
+    .map(id => VENDORS.find(v => v.id === id)?.category)
     .filter((value): value is string => Boolean(value));
   const savedCategories = [...saved]
-    .map(id => vendors.find(v => v.id === id)?.category)
+    .map(id => VENDORS.find(v => v.id === id)?.category)
     .filter((value): value is string => Boolean(value));
   const preferences = new Set([...viewedCategories, ...savedCategories]);
-  const scored = vendors.map(vendor => {
+  const scored = VENDORS.map(vendor => {
     const nearbyBoost = Math.max(0, 30 - distanceKm(location.latitude, location.longitude, vendor.latitude, vendor.longitude));
     const preferenceBoost = preferences.has(vendor.category) ? 40 : 0;
     return { vendor, score: trendingScore(vendor) + nearbyBoost + preferenceBoost };

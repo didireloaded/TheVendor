@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { ArrowLeft, ArrowRight, Briefcase, MapPin, Tag, Palette } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { useData } from '../context/DataContext';
-import { supabase } from '../lib/supabase';
+import { CATEGORIES } from '../data/vendors';
 
 const TOTAL_STEPS = 4;
 
@@ -14,14 +13,12 @@ const STEPS = [
 ];
 
 export default function VendorRegistrationScreen() {
-  const { showToast, setCurrentScreen, user } = useApp();
-  const { categories: CATEGORIES } = useData();
+  const { showToast, setCurrentScreen } = useApp();
   const [step, setStep] = useState(0);
-  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     businessName: '', category: '', description: '',
-    phone: '', whatsapp: '', email: '', address: '', city: 'Windhoek',
-    services: [{ name: '', price: '' }], brandColor: '#1A6FEF'
+    phone: '', whatsapp: '', email: '', address: '',
+    services: [{ name: '', price: '' }],
   });
 
   const update = (field: string, value: any) => setFormData(prev => ({ ...prev, [field]: value }));
@@ -36,42 +33,9 @@ export default function VendorRegistrationScreen() {
 
   const next = () => step < TOTAL_STEPS - 1 ? setStep(step + 1) : submit();
   const prev = () => step > 0 && setStep(step - 1);
-  const submit = async () => {
-    if (!user) {
-      showToast('You must be logged in to register a business', 'error');
-      return;
-    }
-
-    setLoading(true);
-    
-    // We can compute initials based on name
-    const initials = formData.businessName ? formData.businessName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() : 'VN';
-    const logoGradient = `linear-gradient(135deg, ${formData.brandColor}, #0F2B4C)`;
-
-    const { error } = await supabase.from('vendors').insert({
-      user_id: user.id,
-      business_name: formData.businessName,
-      category: formData.category,
-      description: formData.description,
-      phone: formData.phone,
-      whatsapp: formData.whatsapp,
-      email: formData.email,
-      address: formData.address,
-      city: formData.city,
-      logo_initials: initials,
-      logo_gradient: logoGradient,
-      cover_gradient: logoGradient,
-      verified: false,
-    });
-
-    setLoading(false);
-
-    if (error) {
-      showToast(error.message, 'error');
-    } else {
-      showToast('Application submitted! Welcome aboard.', 'success');
-      setCurrentScreen('business-dashboard');
-    }
+  const submit = () => {
+    showToast('Application submitted! We will review your business profile.', 'success');
+    setCurrentScreen('profile');
   };
 
   const CurrentIcon = STEPS[step].icon;
@@ -180,15 +144,6 @@ export default function VendorRegistrationScreen() {
                 onChange={e => update('address', e.target.value)}
               />
             </FormField>
-            <FormField label="City">
-              <input
-                type="text"
-                className="form-input"
-                placeholder="e.g. Windhoek"
-                value={formData.city}
-                onChange={e => update('city', e.target.value)}
-              />
-            </FormField>
           </div>
         )}
 
@@ -231,12 +186,7 @@ export default function VendorRegistrationScreen() {
             <FormField label="Brand Color">
               <div className="grid grid-cols-6 gap-2">
                 {['#1A6FEF', '#E91E63', '#16A34A', '#F59E0B', '#A855F7', '#06B6D4'].map(color => (
-                  <button
-                    key={color}
-                    onClick={() => update('brandColor', color)}
-                    className={`h-10 rounded-xl shadow-sm transition-all ${formData.brandColor === color ? 'ring-2 ring-offset-2 ring-primary-500 scale-105' : ''}`}
-                    style={{ background: color }}
-                  />
+                  <button key={color} className="h-10 rounded-xl shadow-sm" style={{ background: color }} />
                 ))}
               </div>
             </FormField>
@@ -256,11 +206,10 @@ export default function VendorRegistrationScreen() {
         )}
         <button
           onClick={next}
-          disabled={loading}
-          className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-primary-500 to-primary-700 text-white font-black text-sm flex items-center justify-center gap-1 shadow-lg shadow-primary-500/30 disabled:opacity-50"
+          className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-primary-500 to-primary-700 text-white font-black text-sm flex items-center justify-center gap-1 shadow-lg shadow-primary-500/30"
         >
-          {loading ? 'Submitting...' : step === TOTAL_STEPS - 1 ? 'Submit Application' : 'Continue'}
-          {!loading && <ArrowRight size={16} />}
+          {step === TOTAL_STEPS - 1 ? 'Submit Application' : 'Continue'}
+          <ArrowRight size={16} />
         </button>
       </div>
 

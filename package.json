@@ -9,14 +9,17 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@supabase/supabase-js": "^2.107.0",
     "@types/leaflet": "^1.9.21",
     "@types/mapbox-gl": "^3.4.1",
+    "chart.js": "^4.5.1",
     "clsx": "2.1.1",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.17.0",
     "mapbox-gl": "^3.24.0",
     "react": "19.2.6",
+    "react-chartjs-2": "^5.3.1",
     "react-dom": "19.2.6",
     "react-leaflet": "^5.0.0",
     "tailwind-merge": "3.4.0"

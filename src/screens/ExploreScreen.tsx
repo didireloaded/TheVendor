@@ -1,16 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowUpRight, Bookmark, FileText, MapPin, MessageCircle, Search, Share2, X } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { useData } from '../context/DataContext';
-import { buildWhatsAppUrl, getExplorePosts } from '../data/vendors';
+import { CATEGORIES, EXPLORE_POSTS, VENDORS, buildWhatsAppUrl } from '../data/vendors';
 import type { Vendor } from '../data/vendors';
 import QuoteRequestSheet from '../components/QuoteRequestSheet';
 
-type ExplorePost = ReturnType<typeof getExplorePosts>[number];
+type ExplorePost = (typeof EXPLORE_POSTS)[number];
 
 export default function ExploreScreen() {
   const { selectedCategory, setSelectedCategory, setCurrentScreen, setSelectedVendorId, addRecentlyViewed, showToast } = useApp();
-  const { vendors, categories } = useData();
   const [selectedPost, setSelectedPost] = useState<ExplorePost | null>(null);
   const [savedPosts, setSavedPosts] = useState<Set<string>>(new Set());
   const [quoteVendor, setQuoteVendor] = useState<Vendor | null>(null);
@@ -25,13 +23,12 @@ export default function ExploreScreen() {
     setCurrentScreen('vendor-profile');
   };
 
-  const category = selectedCategory ? categories.find(c => c.id === selectedCategory) : null;
+  const category = selectedCategory ? CATEGORIES.find(c => c.id === selectedCategory) : null;
 
   const posts = useMemo(() => {
-    const explorePosts = getExplorePosts(vendors);
-    const base = selectedCategory ? explorePosts.filter(post => post.caption.toLowerCase().includes(selectedCategory)) : explorePosts;
+    const base = selectedCategory ? EXPLORE_POSTS.filter(post => post.caption.toLowerCase().includes(selectedCategory)) : EXPLORE_POSTS;
     return base.slice(0, 40);
-  }, [selectedCategory, vendors]);
+  }, [selectedCategory]);
 
   return (
     <div className="px-5 pt-6">
@@ -66,7 +63,7 @@ export default function ExploreScreen() {
       {/* Category pills if none selected */}
       {!category && (
         <div className="flex gap-2 overflow-x-auto pb-1 mb-5">
-          {categories.slice(0, 8).map(c => (
+          {CATEGORIES.slice(0, 8).map(c => (
             <button
               key={c.id}
               onClick={() => setSelectedCategory(c.id)}
@@ -81,7 +78,7 @@ export default function ExploreScreen() {
       {/* Masonry feed */}
       <div className="masonry-grid">
         {posts.map(post => {
-          const vendor = vendors.find(v => v.id === post.vendorId);
+          const vendor = VENDORS.find(v => v.id === post.vendorId);
           if (!vendor) return null;
           return (
             <article key={post.id} className="masonry-card" onClick={() => setSelectedPost(post)}>
@@ -112,7 +109,7 @@ export default function ExploreScreen() {
       {selectedPost && (
         <ContentDetailOverlay
           post={selectedPost}
-          vendor={vendors.find(v => v.id === selectedPost.vendorId)!}
+          vendor={VENDORS.find(v => v.id === selectedPost.vendorId)!}
           saved={savedPosts.has(selectedPost.id)}
           onClose={() => setSelectedPost(null)}
           onSave={() => setSavedPosts(prev => {
@@ -125,7 +122,7 @@ export default function ExploreScreen() {
           onViewVendor={() => { setSelectedPost(null); openVendor(selectedPost.vendorId); }}
           onRequestQuote={() => {
             setSelectedPost(null);
-            setQuoteVendor(vendors.find(v => v.id === selectedPost.vendorId) || null);
+            setQuoteVendor(VENDORS.find(v => v.id === selectedPost.vendorId) || null);
           }}
         />
       )}

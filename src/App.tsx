@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, lazy, Suspense } from 'react';
 import { Home, Compass, MapPinned, MessagesSquare, UserRound } from 'lucide-react';
 import { AppProvider, useApp } from './context/AppContext';
+import { supabase } from './lib/supabase';
 import SplashScreen from './screens/SplashScreen';
 import OnboardingScreen from './screens/OnboardingScreen';
 import AuthScreen from './screens/AuthScreen';
@@ -32,25 +33,36 @@ function ScreenFallback() {
 }
 
 function AppContent() {
-  const { currentScreen, setCurrentScreen, conversations, user, isGuest } = useApp();
+  const { currentScreen, setCurrentScreen, conversations } = useApp();
   const [appPhase, setAppPhase] = useState<'splash' | 'onboarding' | 'auth' | 'app'>('splash');
 
-  // Route based on auth state
+  // Check Supabase session on mount
   useEffect(() => {
-    if (appPhase === 'splash') return;
-    
-    const hasOnboarded = localStorage.getItem('tv_onboarded');
-    if (!hasOnboarded) {
-      setAppPhase('onboarding');
-      return;
-    }
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const hasOnboarded = localStorage.getItem('tv_onboarded');
+      
+      if (session) {
+        setAppPhase(hasOnboarded ? 'app' : 'onboarding');
+      } else {
+        setAppPhase('splash');
+      }
+    };
+    checkSession();
 
-    if (!user && !isGuest) {
-      setAppPhase('auth');
-    } else {
-      setAppPhase('app');
-    }
-  }, [user, isGuest, appPhase]);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: string, session: any) => {
+      if (event === 'SIGNED_IN' && session) {
+        localStorage.setItem('tv_authed', 'true');
+        const hasOnboarded = localStorage.getItem('tv_onboarded');
+        setAppPhase(hasOnboarded ? 'app' : 'onboarding');
+      } else if (event === 'SIGNED_OUT') {
+        localStorage.removeItem('tv_authed');
+        setAppPhase('auth');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const handleSplashComplete = useCallback(() => {
     const hasOnboarded = localStorage.getItem('tv_onboarded');
@@ -59,9 +71,8 @@ function AppContent() {
   }, []);
 
   const handleOnboardingComplete = useCallback(() => {
-    localStorage.setItem('tv_onboarded', 'true');
-    setAppPhase(user || isGuest ? 'app' : 'auth');
-  }, [user, isGuest]);
+    setAppPhase('auth');
+  }, []);
 
   if (appPhase === 'splash') return <SplashScreen onComplete={handleSplashComplete} />;
   if (appPhase === 'onboarding') return <OnboardingScreen onComplete={handleOnboardingComplete} />;
@@ -167,14 +178,10 @@ function AppContent() {
   );
 }
 
-import { DataProvider } from './context/DataContext';
-
 export default function App() {
   return (
     <AppProvider>
-      <DataProvider>
-        <AppContent />
-      </DataProvider>
+      <AppContent />
     </AppProvider>
   );
 }
