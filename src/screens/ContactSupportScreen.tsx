@@ -7,10 +7,14 @@ export default function ContactSupportScreen() {
   const [topic, setTopic] = useState('General');
   const [message, setMessage] = useState('');
 
-  const openSupportChat = () => {
-    const supportConversation = createSupportConversation();
-    setActiveConversationId(supportConversation.id);
-    setCurrentScreen('chat');
+  const openSupportChat = async () => {
+    try {
+      const supportConversation = await createSupportConversation();
+      setActiveConversationId(supportConversation.id);
+      setCurrentScreen('chat');
+    } catch (e: any) {
+      showToast(e.message, 'error');
+    }
   };
 
   const submitForm = () => {

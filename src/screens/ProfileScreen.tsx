@@ -3,18 +3,20 @@ import {
   ArrowUpRight, Folder, Grid3X3, MapPin, MessageSquare, MoreHorizontal, Share2,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { VENDORS, getProfileFeedPosts } from '../data/vendors';
+import { getProfileFeedPosts } from '../data/vendors';
+import { useData } from '../context/DataContext';
 import ProfileMenuDrawer from '../components/ProfileMenuDrawer';
 
 export default function ProfileScreen() {
   const {
     showToast, setCurrentScreen, favorites, quoteRequests, conversations,
   } = useApp();
+  const { vendors } = useData();
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'posts' | 'messages' | 'collections'>('posts');
 
-  const savedVendors = useMemo(() => VENDORS.filter(v => favorites.has(v.id)), [favorites]);
+  const savedVendors = useMemo(() => vendors.filter(v => favorites.has(v.id)), [favorites]);
   const profileFeed = useMemo(() => getProfileFeedPosts(), []);
   const recentConversations = useMemo(() => conversations.slice(0, 5), [conversations]);
 

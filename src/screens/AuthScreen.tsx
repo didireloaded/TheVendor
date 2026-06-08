@@ -11,7 +11,7 @@ export default function AuthScreen() {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const { showToast } = useApp();
+  const { showToast, setGuestMode } = useApp();
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
@@ -229,9 +229,7 @@ export default function AuthScreen() {
           type="button"
           className="t-label mt-8 mx-auto block"
           onClick={() => {
-            // For demo purposes, allow skipping auth
-            localStorage.setItem('tv_authed', 'true');
-            window.location.reload();
+            setGuestMode(true);
           }}
         >
           Skip for now →

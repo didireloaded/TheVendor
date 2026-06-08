@@ -32,10 +32,11 @@ export default function ChatScreen() {
     .filter(c => !search || c.vendorName.toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => b.lastActivity - a.lastActivity);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!newMessage.trim() || !activeConvo) return;
-    sendMessage(activeConvo.id, newMessage);
-    setNewMessage('');
+    const msg = newMessage;
+    setNewMessage(''); // optimistic clear
+    await sendMessage(activeConvo.id, msg);
   };
 
   // Stats calculation

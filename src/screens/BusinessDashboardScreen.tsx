@@ -1,12 +1,27 @@
 import { ArrowUpRight, BarChart3, BriefcaseBusiness, FileText, MessageSquare, Star, TrendingUp, Users } from 'lucide-react';
 import { useMemo } from 'react';
 import { useApp } from '../context/AppContext';
-import { VENDORS } from '../data/vendors';
+import { useData } from '../context/DataContext';
 
 export default function BusinessDashboardScreen() {
   const { setCurrentScreen, conversations, quoteRequests } = useApp();
+  const { vendors } = useData();
 
-  const vendor = useMemo(() => VENDORS.find(v => v.featured) || VENDORS[0], []);
+  const vendor = useMemo(() => vendors.find(v => v.featured) || vendors[0], [vendors]);
+
+  if (!vendor) {
+    return (
+      <div className="px-5 pt-6 pb-10 flex flex-col h-full">
+        <TopBar title="Business Dashboard" onBack={() => setCurrentScreen('profile')} />
+        <div className="flex-1 flex flex-col items-center justify-center text-center mt-20">
+          <BriefcaseBusiness size={48} className="text-cream-300 mb-4" />
+          <h2 className="text-xl font-bold text-ink-900 mb-2">No Active Business</h2>
+          <p className="text-ink-600 max-w-xs">You need to register a business or wait for data to sync to view this dashboard.</p>
+        </div>
+      </div>
+    );
+  }
+
   const totalMessages = conversations.filter(c => c.vendorId === vendor.id).length;
   const totalQuotes = quoteRequests.filter(q => q.vendorId === vendor.id).length;
   const views = vendor.profileViews || 0;

@@ -4,15 +4,17 @@ import {
   Navigation, Edit2, FileText, Clock,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { getVendorById, VENDORS, buildWhatsAppUrl, buildTelUrl, buildDirectionsUrl } from '../data/vendors';
+import { getVendorById, buildWhatsAppUrl, buildTelUrl, buildDirectionsUrl } from '../data/vendors';
+import { useData } from '../context/DataContext';
 import { getOpenStatus } from '../utils/business';
 import QuoteRequestSheet from '../components/QuoteRequestSheet';
 
 export default function VendorProfileScreen() {
+  const { vendors } = useData();
   const {
     selectedVendorId, setCurrentScreen, isFavorite, toggleFavorite, showToast, setSelectedVendorId,
   } = useApp();
-  const vendor = selectedVendorId ? getVendorById(selectedVendorId) : null;
+  const vendor = selectedVendorId ? getVendorById(vendors, selectedVendorId) : null;
   const [showQuote, setShowQuote] = useState(false);
 
   if (!vendor) {
@@ -28,7 +30,7 @@ export default function VendorProfileScreen() {
   const today = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][new Date().getDay()];
   const status = getOpenStatus(vendor);
 
-  const related = VENDORS
+  const related = vendors
     .filter(v => v.category === vendor.category && v.id !== vendor.id)
     .sort((a, b) => (b.rating - a.rating))
     .slice(0, 4);

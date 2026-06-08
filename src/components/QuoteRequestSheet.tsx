@@ -12,6 +12,7 @@ interface QuoteRequestSheetProps {
 export default function QuoteRequestSheet({ vendor, onClose }: QuoteRequestSheetProps) {
   const { showToast, addQuoteRequest, createOrGetConversation, sendMessage, setActiveConversationId, setCurrentScreen } = useApp();
   const [step, setStep] = useState<'form' | 'success'>('form');
+  const [loading, setLoading] = useState(false);
   const [createdConvoId, setCreatedConvoId] = useState<string | null>(null);
   const [form, setForm] = useState({
     service: vendor.services[0]?.name || '',
@@ -26,45 +27,54 @@ export default function QuoteRequestSheet({ vendor, onClose }: QuoteRequestSheet
 
   const update = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
 
-  const submit = () => {
+  const submit = async () => {
     if (!form.service || !form.name || !form.phone) {
       showToast('Please fill the required fields');
       return;
     }
 
-    // 1. Create quote request
-    const quote = addQuoteRequest({
-      vendorId: vendor.id,
-      vendorName: vendor.name,
-      vendorLogo: vendor.logoInitials,
-      vendorColor: vendor.logoGradient,
-      service: form.service,
-      budget: form.budget,
-      date: form.date,
-      notes: form.notes,
-    });
+    setLoading(true);
 
-    // 2. Create or get conversation
-    const convo = createOrGetConversation({
-      vendorId: vendor.id,
-      vendorName: vendor.name,
-      vendorLogo: vendor.logoInitials,
-      vendorColor: vendor.logoGradient,
-      verified: vendor.verified,
-      verifiedLevel: vendor.verifiedLevel,
-      type: 'quote',
-    });
+    try {
+      // 1. Create quote request
+      const quote = await addQuoteRequest({
+        vendorId: vendor.id,
+        vendorName: vendor.name,
+        vendorLogo: vendor.logoInitials,
+        vendorColor: vendor.logoGradient,
+        service: form.service,
+        budget: form.budget,
+        date: form.date,
+        notes: form.notes,
+      });
 
-    // 3. Post quote message
-    sendMessage(convo.id, `Quote request created`, 'system', { type: 'quote', quoteId: quote.id });
+      // 2. Create or get conversation
+      const convo = await createOrGetConversation({
+        vendorId: vendor.id,
+        vendorName: vendor.name,
+        vendorLogo: vendor.logoInitials,
+        vendorColor: vendor.logoGradient,
+        verified: vendor.verified,
+        verifiedLevel: vendor.verifiedLevel,
+        type: 'quote',
+      });
 
-    // 4. Post user intro
-    if (form.notes) {
-      sendMessage(convo.id, form.notes, 'user');
+      // 3. Post quote message
+      await sendMessage(convo.id, `Quote request created`, 'system', { type: 'quote', quoteId: quote.id });
+
+      // 4. Post user intro
+      if (form.notes) {
+        await sendMessage(convo.id, form.notes, 'user');
+      }
+
+      setCreatedConvoId(convo.id);
+      setStep('success');
+    } catch (err: any) {
+      console.error(err);
+      // Toast already shown in context on error
+    } finally {
+      setLoading(false);
     }
-
-    setCreatedConvoId(convo.id);
-    setStep('success');
   };
 
   const openConversation = () => {
@@ -206,9 +216,10 @@ export default function QuoteRequestSheet({ vendor, onClose }: QuoteRequestSheet
 
               <button
                 onClick={submit}
-                className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-primary-500 to-primary-700 text-white font-black text-sm shadow-lg shadow-primary-500/30"
+                disabled={loading}
+                className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-primary-500 to-primary-700 text-white font-black text-sm shadow-lg shadow-primary-500/30 disabled:opacity-50"
               >
-                Send Quote Request
+                {loading ? 'Sending...' : 'Send Quote Request'}
               </button>
               <p className="text-[10px] text-slate-400 text-center font-medium">
                 {vendor.responseTime} · Free, no fees

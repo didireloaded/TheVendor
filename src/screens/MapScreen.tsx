@@ -5,9 +5,10 @@ import {
   ArrowUpRight, BadgeCheck, ChevronLeft, ChevronRight, Crosshair, Heart, MessageCircle,
   Navigation, Phone, Search, Star, X, Filter,
 } from 'lucide-react';
-import { CATEGORIES, VENDORS, buildDirectionsUrl, buildTelUrl, buildWhatsAppUrl } from '../data/vendors';
+import { buildDirectionsUrl, buildTelUrl, buildWhatsAppUrl } from '../data/vendors';
 import type { Vendor } from '../data/vendors';
 import { useApp } from '../context/AppContext';
+import { useData } from '../context/DataContext';
 import { useCurrentLocation } from '../hooks/useCurrentLocation';
 import { distanceKm, getOpenStatus } from '../utils/business';
 
@@ -50,6 +51,7 @@ function escapeHtml(s: string) {
 }
 
 export default function MapScreen() {
+  const { vendors, categories: CATEGORIES } = useData();
   const { setSelectedVendorId, setCurrentScreen, addRecentlyViewed, isFavorite, toggleFavorite } = useApp();
   const { location } = useCurrentLocation();
   const mapNodeRef = useRef<HTMLDivElement | null>(null);
@@ -64,7 +66,7 @@ export default function MapScreen() {
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   const filtered = useMemo(() => {
-    return VENDORS
+    return vendors
       .filter(v => v.latitude && v.longitude)
       .filter(v => activeFilter === 'all' || v.category === activeFilter)
       .filter(v => !search

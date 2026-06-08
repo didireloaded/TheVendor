@@ -11,6 +11,7 @@ import { useCurrentLocation } from '../hooks/useCurrentLocation';
 import {
   getOpenStatus, getTrendingThisWeek, getVendorOfTheWeek, vendorsNear,
 } from '../utils/business';
+import { useData } from '../context/DataContext';
 
 type FilterKey = 'near' | 'top' | 'verified' | 'open' | 'trending';
 
@@ -28,21 +29,23 @@ export default function HomeScreen() {
   const [placeholder, setPlaceholder] = useState(SEARCH_PLACEHOLDERS[0]);
   const [activeFilter, setActiveFilter] = useState<FilterKey>('near');
 
-  const vendorOfWeek = useMemo(() => getVendorOfTheWeek(), []);
-  const popularCategories = useMemo(() => getPopularCategories(4), []);
+  const { vendors } = useData();
+
+  const vendorOfWeek = useMemo(() => getVendorOfTheWeek(vendors), [vendors]);
+  const popularCategories = useMemo(() => getPopularCategories(vendors, 4), [vendors]);
 
   // Filtered feed
   const feed = useMemo<(Vendor & { computedDistance?: number })[]>(() => {
-    const nearby = vendorsNear(location, 50);
+    const nearby = vendorsNear(vendors, location, 50);
     switch (activeFilter) {
       case 'near': return nearby;
       case 'top': return [...nearby].sort((a, b) => b.rating - a.rating);
       case 'verified': return nearby.filter(v => v.verified);
       case 'open': return nearby.filter(v => getOpenStatus(v).isOpen);
-      case 'trending': return getTrendingThisWeek();
+      case 'trending': return getTrendingThisWeek(vendors);
       default: return nearby;
     }
-  }, [location, activeFilter]);
+  }, [vendors, location, activeFilter]);
 
   useEffect(() => {
     let i = 0;
@@ -107,7 +110,7 @@ export default function HomeScreen() {
       {/* Vendor of the Week — dark hero card */}
       <VendorOfWeekCard
         vendor={vendorOfWeek}
-        onOpen={() => openVendor(vendorOfWeek.id)}
+        onOpen={() => vendorOfWeek && openVendor(vendorOfWeek.id)}
       />
 
       {/* Categories — 4 tile grid */}
@@ -184,7 +187,8 @@ export default function HomeScreen() {
 }
 
 // ============ VENDOR OF THE WEEK — dark "data" card ============
-function VendorOfWeekCard({ vendor, onOpen }: { vendor: Vendor; onOpen: () => void }) {
+function VendorOfWeekCard({ vendor, onOpen }: { vendor?: Vendor; onOpen: () => void }) {
+  if (!vendor) return null;
   return (
     <button onClick={onOpen} className="card-ink relative text-left w-full active:scale-[0.99] transition overflow-hidden">
       {/* Floating "Featured" handle like the inspiration */}
